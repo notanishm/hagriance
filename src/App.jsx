@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import Header from './components/Header';
 import LandingPage from './pages/LandingPage';
@@ -20,81 +19,79 @@ import DevModeBar from './components/DevModeBar';
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <Router>
-            <div className="app-container">
-              <DevModeBar />
-              <Header />
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
-                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/roles" element={<RoleSelection />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+          <div className="app-container">
+            <DevModeBar />
+            <Header />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/roles" element={<RoleSelection />} />
 
-                {/* Onboarding routes - require authentication */}
-                <Route
-                  path="/farmer/register"
-                  element={
-                    <ProtectedRoute>
-                      <FarmerOnboarding />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/register"
-                  element={
-                    <ProtectedRoute>
-                      <BusinessOnboarding />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bank/register"
-                  element={
-                    <ProtectedRoute>
-                      <BankOnboarding />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Onboarding routes - require authentication */}
+              <Route
+                path="/farmer/register"
+                element={
+                  <ProtectedRoute>
+                    <FarmerOnboarding />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/business/register"
+                element={
+                  <ProtectedRoute>
+                    <BusinessOnboarding />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bank/register"
+                element={
+                  <ProtectedRoute>
+                    <BankOnboarding />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Protected dashboard routes - role-based access */}
-                <Route
-                  path="/farmer/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="farmer">
-                      <FarmerDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/business/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="business">
-                      <BusinessDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/bank/dashboard"
-                  element={
-                    <ProtectedRoute requiredRole="bank">
-                      <BankDashboard />
-                    </ProtectedRoute>
-                  }
-                />
+              {/* Protected dashboard routes - role-based access */}
+              <Route
+                path="/farmer/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="farmer">
+                    <FarmerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/business/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="business">
+                    <BusinessDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bank/dashboard"
+                element={
+                  <ProtectedRoute requiredRole="bank">
+                    <BankDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-                {/* Catch-all redirect */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </div>
-          </Router>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+              {/* Catch-all redirect */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

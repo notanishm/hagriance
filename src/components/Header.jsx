@@ -3,15 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft, Globe, Sprout, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import SpotlightCard from './SpotlightCard';
 
 const Header = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { language, setLanguage, t } = useTranslation();
     const { user, logout } = useAuth();
-    const { theme, toggleTheme, isDark } = useTheme();
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const isLanding = location.pathname === '/';
@@ -21,13 +18,11 @@ const Header = () => {
         navigate('/');
     };
 
-    // Get user display name
     const getUserDisplay = () => {
         if (!user) return null;
         return user.email?.split('@')[0] || 'User';
     };
 
-    // Get user role badge
     const getUserRole = () => {
         const path = location.pathname;
         if (path.includes('farmer')) return 'Farmer';
@@ -36,7 +31,6 @@ const Header = () => {
         return 'User';
     };
 
-    // Simple breadcrumb logic
     const pathnames = location.pathname.split('/').filter((x) => x);
     const breadcrumbMap = {
         roles: 'Join',
@@ -58,7 +52,6 @@ const Header = () => {
             height: '70px'
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                {/* Back Button */}
                 {!isLanding && (
                     <button
                         onClick={() => navigate(-1)}
@@ -78,7 +71,6 @@ const Header = () => {
                     </button>
                 )}
 
-                {/* Brand / Logo */}
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
                     <div style={{
                         background: 'var(--primary)',
@@ -94,7 +86,6 @@ const Header = () => {
                     </span>
                 </Link>
 
-                {/* Breadcrumbs */}
                 {!isLanding && (
                     <nav style={{
                         display: 'flex',
@@ -125,8 +116,6 @@ const Header = () => {
                                                 color: 'inherit',
                                                 transition: 'color 0.2s'
                                             }}
-                                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
                                         >
                                             {label}
                                         </Link>
@@ -140,43 +129,36 @@ const Header = () => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {/* Theme Toggle with Spotlight Effect */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginRight: '0.5rem'
-                }}>
-                    <SpotlightCard
-                        onClick={toggleTheme}
-                        isDark={isDark}
-                        spotlightColor={isDark ? 'rgba(74, 222, 128, 0.5)' : 'rgba(45, 90, 39, 0.4)'}
-                        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                    />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-hover)', padding: '0.25rem', borderRadius: 'var(--radius-md)' }}>
-                    {['en', 'hi', 'mr'].map((lang) => (
+                <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--bg-hover)', padding: '0.25rem', borderRadius: 'var(--radius-md)' }}>
+                    {[
+                        { code: 'en', label: 'EN' },
+                        { code: 'hi', label: 'हि' },
+                        { code: 'mr', label: 'మ' },
+                        { code: 'te', label: 'తె' },
+                        { code: 'ta', label: 'த' }
+                    ].map((lang) => (
                         <button
-                            key={lang}
-                            onClick={() => setLanguage(lang)}
+                            key={lang.code}
+                            onClick={() => setLanguage(lang.code)}
                             style={{
-                                padding: '0.4rem 0.8rem',
+                                padding: '0.4rem 0.6rem',
                                 borderRadius: '8px',
                                 border: 'none',
-                                background: language === lang ? 'white' : 'transparent',
-                                boxShadow: language === lang ? 'var(--shadow-sm)' : 'none',
-                                color: language === lang ? 'var(--primary)' : 'var(--text-muted)',
-                                fontWeight: language === lang ? 700 : 500,
-                                fontSize: '0.85rem',
-                                cursor: 'pointer'
+                                background: language === lang.code ? 'white' : 'transparent',
+                                boxShadow: language === lang.code ? 'var(--shadow-sm)' : 'none',
+                                color: language === lang.code ? 'var(--primary)' : 'var(--text-muted)',
+                                fontWeight: language === lang.code ? 700 : 500,
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                minWidth: '32px'
                             }}
                         >
-                            {lang === 'en' ? 'EN' : lang === 'hi' ? 'हि' : 'म'}
+                            {lang.label}
                         </button>
                     ))}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem', borderLeft: '1px solid var(--border)', paddingLeft: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border)', paddingLeft: '1rem' }}>
                     {user ? (
                         <div style={{ position: 'relative' }}>
                             <button
@@ -206,7 +188,7 @@ const Header = () => {
                                 }}>
                                     {getUserDisplay()?.charAt(0).toUpperCase()}
                                 </div>
-                                <div style={{ textAlign: 'left' }}>
+                                <div className="user-info-hide-mobile" style={{ textAlign: 'left' }}>
                                     <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{getUserDisplay()}</div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                         {getUserRole()}
@@ -220,20 +202,14 @@ const Header = () => {
                                     <div
                                         style={{
                                             position: 'fixed',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            zIndex: 999
+                                            top: 0, left: 0, right: 0, bottom: 0, zIndex: 999
                                         }}
                                         onClick={() => setShowUserMenu(false)}
                                     />
                                     <div
                                         style={{
                                             position: 'absolute',
-                                            top: '100%',
-                                            right: 0,
-                                            marginTop: '0.5rem',
+                                            top: '100%', right: 0, marginTop: '0.5rem',
                                             background: 'var(--bg-card)',
                                             border: '1px solid var(--border)',
                                             borderRadius: 'var(--radius-md)',
@@ -251,18 +227,9 @@ const Header = () => {
                                         <button
                                             onClick={handleLogout}
                                             style={{
-                                                width: '100%',
-                                                padding: '0.75rem 1rem',
-                                                border: 'none',
-                                                background: 'none',
-                                                textAlign: 'left',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.5rem',
-                                                color: '#ef4444',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem'
+                                                width: '100%', padding: '0.75rem 1rem', border: 'none', background: 'none',
+                                                textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                gap: '0.5rem', color: '#ef4444', fontWeight: 600, fontSize: '0.9rem'
                                             }}
                                         >
                                             <LogOut size={16} /> Logout
@@ -272,17 +239,10 @@ const Header = () => {
                             )}
                         </div>
                     ) : (
-                        <>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
                             <button
                                 onClick={() => navigate('/login')}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    cursor: 'pointer'
-                                }}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
                             >
                                 Login
                             </button>
@@ -293,7 +253,7 @@ const Header = () => {
                             >
                                 Register
                             </button>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
