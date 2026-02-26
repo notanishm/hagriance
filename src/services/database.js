@@ -251,7 +251,7 @@ export const businessService = {
     try {
       let query = supabase
         .from('profiles')
-        .select('id, full_name, phone_number, location, land_size, crops_history, rating')
+        .select('id, full_name, phone_number, location, land_size, crop_history, rating')
         .eq('role', 'farmer');
 
       // Only add search filter if searchTerm is provided
