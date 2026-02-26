@@ -18,6 +18,25 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // DEV MODE BYPASS
+    if (import.meta.env.VITE_DEV_MODE === 'true') {
+      import('../data/mockData').then(({ mockUsers }) => {
+        const devRole = localStorage.getItem('dev_role') || 'business';
+        const mockProfile = mockUsers[devRole] || mockUsers.business;
+
+        const mockUser = {
+          id: mockProfile.id,
+          email: mockProfile.email,
+          user_metadata: { full_name: mockProfile.full_name }
+        };
+
+        setUser(mockUser);
+        setUserProfile(mockProfile);
+        setLoading(false);
+      });
+      return;
+    }
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -32,13 +51,13 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         console.log('Auth event:', event);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           await loadUserProfile(session.user.id);
         } else {
           setUserProfile(null);
         }
-        
+
         setLoading(false);
       }
     );
@@ -93,7 +112,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const redirectUrl = getRedirectUrl();
       console.log('Signup redirect URL:', redirectUrl);
-      
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -150,7 +169,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const redirectUrl = getRedirectUrl();
-      
+
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
@@ -168,7 +187,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (updates) => {
     try {
       setError(null);
-      
+
       if (!user) throw new Error('No user logged in');
 
       const { data, error } = await supabase
@@ -182,7 +201,7 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) throw error;
-      
+
       setUserProfile(data);
       return { data, error: null };
     } catch (error) {
@@ -215,7 +234,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const redirectUrl = getRedirectUrl();
       console.log('Google OAuth redirect URL:', redirectUrl);
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -236,6 +255,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const switchDevRole = (role) => {
+    localStorage.setItem('dev_role', role);
+    window.location.reload();
+  };
+
   const value = {
     user,
     userProfile,
@@ -250,6 +274,8 @@ export const AuthProvider = ({ children }) => {
     updateUserMetadata,
     isAuthenticated: !!user,
     role: userProfile?.role || null,
+    isDevMode: import.meta.env.VITE_DEV_MODE === 'true',
+    switchDevRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

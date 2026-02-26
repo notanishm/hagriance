@@ -2,14 +2,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import en from '../locales/en.json';
 import hi from '../locales/hi.json';
 import mr from '../locales/mr.json';
+import te from '../locales/te.json';
+import ta from '../locales/ta.json';
 
 const LanguageContext = createContext();
 
-const translations = { en, hi, mr };
+const translations = { en, hi, mr, te, ta };
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(localStorage.getItem('lang') || 'en');
-  
+
   const t = (path) => {
     const keys = path.split('.');
     let result = translations[language];

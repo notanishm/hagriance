@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Wallet, FileCheck, Tractor, TrendingUp, ShieldCheck, Microscope, ThermometerSun, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { farmerService } from '../../services/database';
+import { farmerService, businessService } from '../../services/database';
+import LoanApplicationFlow from '../../components/LoanApplicationFlow';
+import { mockMarketInsights, mockNotifications } from '../../data/mockData';
 
 const FarmerDashboard = () => {
     const { t } = useTranslation();
@@ -13,40 +15,57 @@ const FarmerDashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showLoanModal, setShowLoanModal] = useState(false);
+    const [notifications, setNotifications] = useState(mockNotifications);
+    const [showNotifications, setShowNotifications] = useState(false);
+
+    const fetchData = async () => {
+        if (!user) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Fetch farmer contracts
+            const { data: contractsData, error: contractsError } = await farmerService.getFarmerContracts(user.id);
+            if (contractsError) throw contractsError;
+            setContracts(contractsData || []);
+
+            // Fetch farmer loans
+            const { data: loansData, error: loansError } = await farmerService.getFarmerLoans(user.id);
+            if (loansError) throw loansError;
+            setLoans(loansData || []);
+
+            // Fetch farmer profile
+            const { data: profileData, error: profileError } = await farmerService.getFarmerProfile(user.id);
+            if (profileError) throw profileError;
+            setProfile(profileData);
+
+        } catch (err) {
+            console.error('Error fetching farmer data:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return;
-            
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch farmer contracts
-                const { data: contractsData, error: contractsError } = await farmerService.getFarmerContracts(user.id);
-                if (contractsError) throw contractsError;
-                setContracts(contractsData || []);
-
-                // Fetch farmer loans
-                const { data: loansData, error: loansError } = await farmerService.getFarmerLoans(user.id);
-                if (loansError) throw loansError;
-                setLoans(loansData || []);
-
-                // Fetch farmer profile
-                const { data: profileData, error: profileError } = await farmerService.getFarmerProfile(user.id);
-                if (profileError) throw profileError;
-                setProfile(profileData);
-
-            } catch (err) {
-                console.error('Error fetching farmer data:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
     }, [user]);
+
+    const handleContractAction = async (contractId, action) => {
+        try {
+            const status = action === 'accept' ? 'active' : 'rejected';
+            const { error } = await businessService.updateContractStatus(contractId, status);
+            if (error) throw error;
+
+            // Update local state
+            setContracts(prev => prev.map(c => c.id === contractId ? { ...c, status } : c));
+        } catch (err) {
+            console.error('Error updating contract:', err);
+            alert('Failed to update contract status');
+        }
+    };
 
     // Calculate stats from real data
     const activeContractsCount = contracts.filter(c => c.status === 'active' || c.status === 'in_progress').length;
@@ -54,7 +73,7 @@ const FarmerDashboard = () => {
     const totalEarnings = contracts
         .filter(c => c.status === 'completed')
         .reduce((sum, c) => sum + (c.total_value || 0), 0);
-    
+
     const stats = [
         { label: 'Active Contracts', value: activeContractsCount.toString(), icon: <FileCheck color="var(--primary)" /> },
         { label: 'Pending Offers', value: pendingOffersCount.toString(), icon: <Bell color="#B8860B" /> },
@@ -90,12 +109,32 @@ const FarmerDashboard = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: '#fcfdfa' }}>
-            {/* Header section removed - using global Header */}
-
             <main style={{ padding: '3rem 4rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h1>Welcome back, {profile?.full_name || user?.email || 'Farmer'}</h1>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div>
+                        <h1 style={{ marginBottom: '0.25rem' }}>Welcome back, {profile?.full_name || user?.email || 'Farmer'}</h1>
+                        <p style={{ color: 'var(--text-muted)' }}>Here's what's happening with your farm today.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            className="btn btn-secondary"
+                            style={{ position: 'relative', padding: '0.75rem' }}
+                            onClick={() => setShowNotifications(!showNotifications)}
+                        >
+                            <Bell size={20} />
+                            {notifications.filter(n => n.unread).length > 0 && (
+                                <span style={{
+                                    position: 'absolute', top: '-5px', right: '-5px',
+                                    background: '#ef4444', color: 'white', fontSize: '10px',
+                                    padding: '2px 6px', borderRadius: '10px', fontWeight: 800
+                                }}>
+                                    {notifications.filter(n => n.unread).length}
+                                </span>
+                            )}
+                        </button>
+                        <button className="btn btn-primary" onClick={() => setShowLoanModal(true)}>
+                            <Wallet size={18} /> {t('loan.apply')}
+                        </button>
                         {profile?.kyc_status === 'verified' && (
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -108,6 +147,43 @@ const FarmerDashboard = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Notifications Panel */}
+                <AnimatePresence>
+                    {showNotifications && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="card"
+                            style={{
+                                position: 'absolute', top: '160px', right: '4rem',
+                                width: '350px', padding: '1.5rem', boxShadow: 'var(--shadow-lg)',
+                                border: '1px solid var(--border)', zIndex: 100
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1rem', margin: 0 }}>Notifications</h3>
+                                <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {notifications.length === 0 ? (
+                                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem' }}>No new notifications</p>
+                                ) : (
+                                    notifications.map(n => (
+                                        <div key={n.id} style={{ paddingBottom: '0.75rem', borderBottom: '1px solid #f1f5f9' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{n.title}</span>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{n.time}</span>
+                                            </div>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>{n.message}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Stats Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -133,7 +209,7 @@ const FarmerDashboard = () => {
                     {/* Active Contracts */}
                     <section>
                         <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FileCheck size={24} color="var(--primary)" /> Active Contracts
+                            <FileCheck size={24} color="var(--primary)" /> Contracts & Offers
                         </h2>
                         {contracts.length === 0 ? (
                             <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
@@ -146,30 +222,30 @@ const FarmerDashboard = () => {
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {contracts.map(contract => {
-                                    const statusDisplay = contract.status === 'active' || contract.status === 'in_progress' ? 'In Progress' : 
-                                                         contract.status === 'pending' ? 'Verification' :
-                                                         contract.status === 'completed' ? 'Completed' : contract.status;
                                     const progress = contract.progress || (contract.status === 'completed' ? 100 : 50);
-                                    
+
                                     return (
                                         <div key={contract.id} className="card" style={{ padding: '2rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                                 <div>
-                                                    <h3 style={{ fontSize: '1.25rem' }}>{contract.business_name || 'Business Contract'}</h3>
-                                                    <p style={{ color: 'var(--text-muted)' }}>
-                                                        {contract.crop_name} • {contract.quantity} Quintals
+                                                    <h3 style={{ fontSize: '1.25rem', margin: 0 }}>{contract.business_name || 'Business Contract'}</h3>
+                                                    <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+                                                        {contract.crop_name} • {contract.quantity} {contract.unit || 'Quintals'}
                                                     </p>
                                                 </div>
                                                 <div style={{ textAlign: 'right' }}>
                                                     <span style={{
                                                         padding: '0.4rem 1rem',
                                                         borderRadius: 'var(--radius-full)',
-                                                        background: statusDisplay === 'In Progress' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(212, 175, 55, 0.1)',
-                                                        color: statusDisplay === 'In Progress' ? 'var(--success)' : '#B8860B',
+                                                        background: contract.status === 'active' || contract.status === 'in_progress' ? 'rgba(16, 185, 129, 0.1)' :
+                                                            contract.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(0,0,0,0.05)',
+                                                        color: contract.status === 'active' || contract.status === 'in_progress' ? 'var(--success)' :
+                                                            contract.status === 'pending' ? '#F59E0B' : 'var(--text-muted)',
                                                         fontSize: '0.8rem',
                                                         fontWeight: 700
                                                     }}>
-                                                        {statusDisplay}
+                                                        {contract.status === 'active' || contract.status === 'in_progress' ? 'In Progress' :
+                                                            contract.status === 'pending' ? 'Pending Offer' : contract.status.toUpperCase()}
                                                     </span>
                                                     <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                                         Value: ₹{contract.total_value?.toLocaleString() || '0'}
@@ -177,17 +253,38 @@ const FarmerDashboard = () => {
                                                 </div>
                                             </div>
 
-                                            <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                                                <span>Growth Progress</span>
-                                                <span style={{ fontWeight: 600 }}>{progress}%</span>
-                                            </div>
-                                            <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${progress}%` }}
-                                                    style={{ height: '100%', background: 'var(--primary)' }}
-                                                />
-                                            </div>
+                                            {contract.status === 'pending' ? (
+                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                    <button
+                                                        className="btn btn-secondary"
+                                                        style={{ flex: 1, color: '#ef4444' }}
+                                                        onClick={() => handleContractAction(contract.id, 'reject')}
+                                                    >
+                                                        Decline
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        style={{ flex: 1 }}
+                                                        onClick={() => handleContractAction(contract.id, 'accept')}
+                                                    >
+                                                        Accept Offer
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                                        <span>Growth Progress</span>
+                                                        <span style={{ fontWeight: 600 }}>{progress}%</span>
+                                                    </div>
+                                                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${progress}%` }}
+                                                            style={{ height: '100%', background: 'var(--primary)' }}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     );
                                 })}
@@ -197,20 +294,27 @@ const FarmerDashboard = () => {
 
                     {/* Sidebar */}
                     <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-
                         {/* Market Insights */}
                         <section>
                             <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 Market Insights
                             </h2>
-                            <div className="card" style={{ background: 'var(--primary)', color: 'white', padding: '2rem' }}>
-                                <TrendingUp style={{ marginBottom: '1rem' }} />
-                                <h3 style={{ marginBottom: '0.5rem' }}>Wheat Demand is Up!</h3>
-                                <p style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '1.5rem' }}>
-                                    Businesses are looking for Premium Organic Wheat in your region. Contracts offering 15% better prices.
-                                </p>
-                                <button className="btn" style={{ background: 'white', color: 'var(--primary)', width: '100%' }}>View Offers</button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {mockMarketInsights.map((insight, i) => (
+                                    <div key={i} className="card" style={{
+                                        background: insight.trend === 'up' ? 'var(--primary)' : insight.trend === 'alert' ? '#ef4444' : 'white',
+                                        color: insight.trend === 'up' || insight.trend === 'alert' ? 'white' : 'var(--text-main)',
+                                        padding: '1.5rem'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                                            {insight.trend === 'up' ? <TrendingUp size={20} /> : insight.trend === 'alert' ? <AlertCircle size={20} /> : <Bell size={20} />}
+                                            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{insight.title}</h3>
+                                        </div>
+                                        <p style={{ fontSize: '0.85rem', opacity: 0.9, margin: 0 }}>
+                                            {insight.desc}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
                         </section>
 
@@ -251,7 +355,9 @@ const FarmerDashboard = () => {
                 </div>
             </main>
 
-
+            <AnimatePresence>
+                {showLoanModal && <LoanApplicationFlow onClose={() => setShowLoanModal(false)} onComplete={fetchData} />}
+            </AnimatePresence>
         </div>
     );
 };

@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Filter, Landmark, User, FileText,
     BarChart3, CheckCircle, XCircle, ChevronRight,
-    AlertCircle, TrendingUp, Calendar, Clock
+    AlertCircle, TrendingUp, Calendar, Clock, PieChart, Info
 } from 'lucide-react';
-import { sampleLoans, LOAN_STATUS } from '../../data/loans';
 import RiskAssessment from '../../components/RiskAssessment';
 import { useAuth } from '../../contexts/AuthContext';
 import { bankService } from '../../services/database';
@@ -15,81 +14,55 @@ const BankDashboard = () => {
     const [activeTab, setActiveTab] = useState('applications'); // applications, portfolio, analytics
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // Real data from Supabase
+
     const [loanApplications, setLoanApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchData = async () => {
+        if (!user) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+            const { data: loansData } = await bankService.getLoanApplications({});
+            setLoanApplications(loansData || []);
+        } catch (err) {
+            console.error('Error fetching bank data:', err);
+            setError('Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return;
-            
-            try {
-                setLoading(true);
-                setError(null);
-
-                // Fetch all loan applications for review
-                const { data: loansData, error: loansError } = await bankService.getLoanApplications({});
-                if (loansError) throw loansError;
-                setLoanApplications(loansData || []);
-
-            } catch (err) {
-                console.error('Error fetching bank data:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
     }, [user]);
 
-    const handleApprove = async (loanId) => {
+    const handleLoanAction = async (loanId, status) => {
         try {
-            const { error } = await bankService.updateLoanStatus(loanId, 'approved', 'Approved by banker');
+            const reason = status === 'approved' ? 'Meets institutional risk threshold' : 'High credit risk or low collateral visibility';
+            const { error } = await bankService.updateLoanStatus(loanId, status, reason);
             if (error) throw error;
-            
-            // Update local state
-            setLoanApplications(prev => 
-                prev.map(loan => loan.id === loanId ? { ...loan, status: 'approved' } : loan)
-            );
-            setSelectedApplication(prev => prev?.id === loanId ? { ...prev, status: 'approved' } : prev);
-            alert('Loan application approved successfully!');
+            setLoanApplications(prev => prev.map(l => l.id === loanId ? { ...l, status } : l));
+            setSelectedApplication(prev => prev?.id === loanId ? { ...prev, status } : prev);
         } catch (err) {
-            alert(`Error approving loan: ${err.message}`);
+            alert(`Error updating loan: ${err.message}`);
         }
     };
 
-    const handleReject = async (loanId) => {
-        try {
-            const { error } = await bankService.updateLoanStatus(loanId, 'rejected', 'Rejected by banker');
-            if (error) throw error;
-            
-            // Update local state
-            setLoanApplications(prev => 
-                prev.map(loan => loan.id === loanId ? { ...loan, status: 'rejected' } : loan)
-            );
-            setSelectedApplication(prev => prev?.id === loanId ? { ...prev, status: 'rejected' } : prev);
-            alert('Loan application rejected');
-        } catch (err) {
-            alert(`Error rejecting loan: ${err.message}`);
-        }
-    };
-
-    // Calculate stats from real data
     const pendingCount = loanApplications.filter(l => l.status === 'pending').length;
-    const approvedLoans = loanApplications.filter(l => l.status === 'approved');
+    const approvedLoans = loanApplications.filter(l => l.status === 'approved' || l.status === 'active');
     const totalActiveLoanValue = approvedLoans.reduce((sum, l) => sum + (l.loan_amount || 0), 0);
-    const avgRiskScore = loanApplications.length > 0 
+    const avgRiskScore = loanApplications.length > 0
         ? Math.round(loanApplications.reduce((sum, l) => sum + (l.risk_score || 80), 0) / loanApplications.length)
         : 82;
 
     const stats = [
-        { label: 'Pending Applications', value: pendingCount.toString(), icon: <Clock color="#F59E0B" />, trend: '+3 today' },
-        { label: 'Active Loans', value: `₹${(totalActiveLoanValue / 100000).toFixed(1)}L`, icon: <Landmark color="var(--primary)" />, trend: `${approvedLoans.length} Active` },
-        { label: 'Avg Risk Score', value: `${avgRiskScore}/100`, icon: <TrendingUp color="var(--success)" />, trend: 'Healthy' },
-        { label: 'Repayments Rate', value: '98.4%', icon: <CheckCircle color="var(--primary)" />, trend: 'Above avg' }
+        { label: 'Pending Applications', value: pendingCount.toString(), icon: <Clock color="#F59E0B" /> },
+        { label: 'Total AUM', value: `₹${(totalActiveLoanValue / 100000).toFixed(1)}L`, icon: <Landmark color="var(--primary)" /> },
+        { label: 'Avg Portfolio Risk', value: `${avgRiskScore}/100`, icon: <TrendingUp color="var(--success)" /> },
+        { label: 'Default Rate', value: '1.2%', icon: <XCircle color="#EF4444" /> }
     ];
 
     const filteredApplications = loanApplications.filter(loan =>
@@ -97,31 +70,7 @@ const BankDashboard = () => {
         loan.application_number?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
-        return (
-            <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-                    <p style={{ color: 'var(--text-muted)' }}>Loading loan applications...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '3rem 4rem' }}>
-                <div className="card" style={{ padding: '2rem', maxWidth: '600px', margin: '2rem auto', border: '1px solid #ef4444' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', marginBottom: '1rem' }}>
-                        <AlertCircle size={24} />
-                        <h3 style={{ margin: 0 }}>Error Loading Dashboard</h3>
-                    </div>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{error}</p>
-                    <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏳ Loading Banker Terminal...</div>;
 
     return (
         <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
@@ -129,38 +78,24 @@ const BankDashboard = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
                     <div>
                         <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Banker's Terminal</h1>
-                        <p style={{ color: 'var(--text-muted)' }}>Evaluating agriculture risk using verified platform contracts and profiles.</p>
+                        <p style={{ color: 'var(--text-muted)' }}>AI-driven agriculture lending risk assessment</p>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', background: 'white', padding: '0.5rem', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
                         {['applications', 'portfolio', 'analytics'].map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                style={{
-                                    padding: '0.75rem 1.5rem',
-                                    borderRadius: 'var(--radius-sm)',
-                                    border: 'none',
-                                    background: activeTab === tab ? 'var(--primary)' : 'transparent',
-                                    color: activeTab === tab ? 'white' : 'var(--text-muted)',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    textTransform: 'capitalize'
-                                }}
-                            >
-                                {tab}
-                            </button>
+                            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                                padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-sm)', border: 'none',
+                                background: activeTab === tab ? 'var(--primary)' : 'transparent',
+                                color: activeTab === tab ? 'white' : 'var(--text-muted)', fontWeight: 600,
+                                cursor: 'pointer', textTransform: 'capitalize'
+                            }}>{tab}</button>
                         ))}
                     </div>
                 </div>
 
-                {/* Stats Overview */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
                     {stats.map((stat, i) => (
                         <div key={i} className="card" style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px' }}>{stat.icon}</div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 700 }}>{stat.trend}</span>
-                            </div>
+                            <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.03)', borderRadius: '8px', width: 'fit-content', marginBottom: '1rem' }}>{stat.icon}</div>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stat.label}</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{stat.value}</div>
                         </div>
@@ -169,170 +104,55 @@ const BankDashboard = () => {
 
                 {activeTab === 'applications' && (
                     <div style={{ display: 'grid', gridTemplateColumns: selectedApplication ? '1fr 450px' : '1fr', gap: '2rem' }}>
-                        {/* List Section */}
-                        <section>
-                            <div style={{ background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-                                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '1.5rem' }}>
-                                    <div style={{ position: 'relative', flex: 1 }}>
-                                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
-                                        <input
-                                            type="text"
-                                            placeholder="Search application ID or applicant name..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
-                                        />
-                                    </div>
-                                    <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Filter size={18} /> Filters
-                                    </button>
-                                </div>
-
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                    <thead style={{ background: '#f8fafc', textAlignment: 'left' }}>
-                                        <tr>
-                                            <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>APPLICANT</th>
-                                            <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>AMOUNT</th>
-                                            <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>RISK SCORE</th>
-                                            <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>STATUS</th>
-                                            <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredApplications.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="5" style={{ padding: '3rem', textAlign: 'center' }}>
-                                                    <FileText size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                                                    <p style={{ color: 'var(--text-muted)' }}>No loan applications found</p>
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            filteredApplications.map(loan => {
-                                                const statusColor = loan.status === 'approved' ? 'var(--success)' : 
-                                                                   loan.status === 'rejected' ? '#EF4444' : '#F59E0B';
-                                                const statusBg = loan.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 
-                                                                loan.status === 'rejected' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)';
-                                                
-                                                return (
-                                                    <tr
-                                                        key={loan.id}
-                                                        onClick={() => setSelectedApplication(loan)}
-                                                        style={{
-                                                            borderTop: '1px solid #f1f5f9',
-                                                            cursor: 'pointer',
-                                                            background: selectedApplication?.id === loan.id ? 'rgba(45, 90, 39, 0.03)' : 'transparent'
-                                                        }}
-                                                    >
-                                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                            <div style={{ fontWeight: 600 }}>{loan.applicant_name || 'Unknown'}</div>
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                ID: {loan.application_number} • {loan.applicant_type || 'Farmer'}
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                            <div style={{ fontWeight: 700 }}>₹{loan.loan_amount?.toLocaleString() || '0'}</div>
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                {loan.purpose?.substring(0, 20) || 'N/A'}...
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                            <div style={{
-                                                                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                                                                color: (loan.risk_score || 80) >= 80 ? 'var(--success)' : 
-                                                                       (loan.risk_score || 80) >= 60 ? '#F59E0B' : '#EF4444',
-                                                                fontWeight: 800, fontSize: '1.1rem'
-                                                            }}>
-                                                                {loan.risk_score || 80}
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                            <span style={{
-                                                                padding: '0.25rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 600,
-                                                                background: statusBg,
-                                                                color: statusColor
-                                                            }}>
-                                                                {loan.status?.toUpperCase() || 'PENDING'}
-                                                            </span>
-                                                        </td>
-                                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                                                            <ChevronRight size={18} color="var(--text-muted)" />
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
+                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                                <input type="text" placeholder="Search applicant..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} />
                             </div>
-                        </section>
-
-                        {/* Analysis Sidebar */}
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead style={{ background: '#f8fafc' }}>
+                                    <tr>
+                                        <th style={{ padding: '1rem', textAlign: 'left' }}>APPLICANT</th>
+                                        <th style={{ padding: '1rem', textAlign: 'left' }}>AMOUNT</th>
+                                        <th style={{ padding: '1rem', textAlign: 'left' }}>RISK SCORE</th>
+                                        <th style={{ padding: '1rem', textAlign: 'left' }}>STATUS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredApplications.map(loan => (
+                                        <tr key={loan.id} onClick={() => setSelectedApplication(loan)} style={{ borderTop: '1px solid #f1f5f9', cursor: 'pointer', background: selectedApplication?.id === loan.id ? 'rgba(45, 90, 39, 0.03)' : 'transparent' }}>
+                                            <td style={{ padding: '1.25rem' }}>
+                                                <div style={{ fontWeight: 600 }}>{loan.applicant_name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{loan.applicant_type.toUpperCase()} • #{loan.application_number}</div>
+                                            </td>
+                                            <td style={{ padding: '1.25rem', fontWeight: 700 }}>₹{loan.loan_amount.toLocaleString()}</td>
+                                            <td style={{ padding: '1.25rem' }}>
+                                                <span style={{ fontWeight: 800, color: loan.risk_score >= 80 ? 'var(--success)' : (loan.risk_score >= 60 ? '#F59E0B' : '#EF4444') }}>{loan.risk_score}</span>
+                                            </td>
+                                            <td style={{ padding: '1.25rem' }}>
+                                                <span style={{ padding: '0.25rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 600, background: loan.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: loan.status === 'approved' ? 'var(--success)' : '#F59E0B' }}>{loan.status.toUpperCase()}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                         <AnimatePresence>
                             {selectedApplication && (
-                                <motion.aside
-                                    initial={{ x: 20, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    exit={{ x: 20, opacity: 0 }}
-                                >
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <RiskAssessment score={selectedApplication.risk_score || 80} breakdown={selectedApplication.riskBreakdown || {}} />
-
-                                        <div className="card" style={{ padding: '1.5rem' }}>
-                                            <h4 style={{ marginBottom: '1rem' }}>Application Details</h4>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ color: 'var(--text-muted)' }}>Applied Date</span>
-                                                    <span>{new Date(selectedApplication.created_at).toLocaleDateString() || 'N/A'}</span>
+                                <motion.aside initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <RiskAssessment score={selectedApplication.risk_score} />
+                                    <div className="card" style={{ padding: '1.5rem' }}>
+                                        <h3>Application Details</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem', fontSize: '0.9rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Purpose</span><span style={{ fontWeight: 600 }}>{selectedApplication.purpose}</span></div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Tenure</span><span>{selectedApplication.tenure_months} months</span></div>
+                                            {selectedApplication.status === 'pending' ? (
+                                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                                    <button className="btn btn-secondary" style={{ flex: 1, color: '#EF4444' }} onClick={() => handleLoanAction(selectedApplication.id, 'rejected')}>Reject</button>
+                                                    <button className="btn btn-primary" style={{ flex: 2 }} onClick={() => handleLoanAction(selectedApplication.id, 'approved')}>Approve</button>
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ color: 'var(--text-muted)' }}>Purpose</span>
-                                                    <span style={{ fontWeight: 600 }}>{selectedApplication.purpose || 'N/A'}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span style={{ color: 'var(--text-muted)' }}>Tenure</span>
-                                                    <span>{selectedApplication.tenure_months || 0} months</span>
-                                                </div>
-                                                {selectedApplication.status === 'pending' && (
-                                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                                                        <button
-                                                            className="btn btn-secondary"
-                                                            style={{ flex: 1, color: '#EF4444' }}
-                                                            onClick={() => handleReject(selectedApplication.id)}
-                                                        >
-                                                            <XCircle size={18} /> Reject
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-primary"
-                                                            style={{ flex: 2 }}
-                                                            onClick={() => handleApprove(selectedApplication.id)}
-                                                        >
-                                                            <CheckCircle size={18} /> Approve Loan
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {selectedApplication.status !== 'pending' && (
-                                                    <div style={{ 
-                                                        marginTop: '1rem', 
-                                                        padding: '1rem', 
-                                                        background: selectedApplication.status === 'approved' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                                        borderRadius: 'var(--radius-sm)',
-                                                        textAlign: 'center',
-                                                        fontWeight: 700,
-                                                        color: selectedApplication.status === 'approved' ? 'var(--success)' : '#EF4444'
-                                                    }}>
-                                                        {selectedApplication.status === 'approved' ? '✓ APPROVED' : '✗ REJECTED'}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="card" style={{ padding: '1.5rem', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', marginBottom: '0.5rem', fontWeight: 700 }}>
-                                                <AlertCircle size={18} /> Platform Insight
-                                            </div>
-                                            <p style={{ fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-                                                {selectedApplication.applicant_name} has platform verification and contract history available for risk assessment.
-                                            </p>
+                                            ) : (
+                                                <div style={{ textAlign: 'center', padding: '1rem', background: '#f1f5f9', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}>{selectedApplication.status.toUpperCase()}</div>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.aside>
@@ -341,12 +161,74 @@ const BankDashboard = () => {
                     </div>
                 )}
 
-                {activeTab !== 'applications' && (
-                    <div className="card" style={{ padding: '5rem', textAlign: 'center' }}>
-                        <BarChart3 size={64} color="var(--primary)" style={{ marginBottom: '1.5rem' }} />
-                        <h2>Advanced Analytics Dashboard</h2>
-                        <p style={{ color: 'var(--text-muted)' }}>This module is currently processing institutional data records.</p>
-                    </div>
+                {activeTab === 'portfolio' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+                            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}><h3>Active Loan Portfolio</h3></div>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead style={{ background: '#f8fafc' }}>
+                                        <tr>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>BORROWER</th>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>LOAN TYPE</th>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>REPAYMENT</th>
+                                            <th style={{ padding: '1rem', textAlign: 'left' }}>EXPOSURE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {approvedLoans.map(loan => (
+                                            <tr key={loan.id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: '1.25rem' }}><strong>{loan.applicant_name}</strong></td>
+                                                <td style={{ padding: '1.25rem' }}>{loan.applicant_type.toUpperCase()}</td>
+                                                <td style={{ padding: '1.25rem' }}>
+                                                    <div style={{ height: '6px', background: '#f1f5f9', borderRadius: '3px', width: '100%', overflow: 'hidden' }}>
+                                                        <div style={{ height: '100%', width: '45%', background: 'var(--success)' }}></div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '1.25rem', fontWeight: 700 }}>₹{loan.loan_amount.toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <aside className="card" style={{ padding: '2rem' }}>
+                                <PieChart style={{ marginBottom: '1.5rem', color: 'var(--primary)' }} />
+                                <h3>Exposure by Category</h3>
+                                <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Farmers</span><span style={{ fontWeight: 700 }}>64%</span></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Agri-Businesses</span><span style={{ fontWeight: 700 }}>36%</span></div>
+                                    <div style={{ height: '10px', display: 'flex', borderRadius: '5px', overflow: 'hidden', marginTop: '1rem' }}>
+                                        <div style={{ width: '64%', background: 'var(--primary)' }}></div>
+                                        <div style={{ width: '36%', background: '#B8860B' }}></div>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'analytics' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                            <div className="card" style={{ padding: '2rem' }}>
+                                <BarChart3 style={{ marginBottom: '1rem', color: 'var(--primary)' }} />
+                                <h3>Credit Growth vs Risk</h3>
+                                <div style={{ height: '200px', width: '100%', background: '#f8fafc', borderRadius: 'var(--radius-md)', marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', padding: '1rem' }}>
+                                    {[40, 65, 45, 90, 55, 70].map((h, i) => <div key={i} style={{ height: `${h}%`, width: '25px', background: 'var(--primary)', borderRadius: '4px 4px 0 0' }}></div>)}
+                                </div>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem', textAlign: 'center' }}>Monthly Credit Disbursement (Last 6 Months)</p>
+                            </div>
+                            <div className="card" style={{ padding: '2rem' }}>
+                                <Info style={{ marginBottom: '1rem', color: 'var(--primary)' }} />
+                                <h3>Portfolio Health Meta-Data</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Systemic Default Risk</span><span style={{ color: 'var(--success)', fontWeight: 800 }}>Low (0.8%)</span></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Regional Volatility</span><span style={{ fontWeight: 700 }}>Stable</span></div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Yield Verification Rate</span><span style={{ fontWeight: 700 }}>100% (Blockchain)</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </main>
         </div>

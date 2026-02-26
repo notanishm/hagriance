@@ -16,6 +16,7 @@ import BusinessDashboard from './pages/business/BusinessDashboard';
 import BankOnboarding from './pages/bank/BankOnboarding';
 import BankDashboard from './pages/bank/BankDashboard';
 import AuthCallback from './pages/AuthCallback';
+import DevModeBar from './components/DevModeBar';
 
 function App() {
   return (
@@ -24,74 +25,75 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="app-container">
+              <DevModeBar />
               <Header />
               <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
-              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/roles" element={<RoleSelection />} />
-              
-              {/* Onboarding routes - require authentication */}
-              <Route 
-                path="/farmer/register" 
-                element={
-                  <ProtectedRoute>
-                    <FarmerOnboarding />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/business/register" 
-                element={
-                  <ProtectedRoute>
-                    <BusinessOnboarding />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/bank/register" 
-                element={
-                  <ProtectedRoute>
-                    <BankOnboarding />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Protected dashboard routes - role-based access */}
-              <Route 
-                path="/farmer/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="farmer">
-                    <FarmerDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/business/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="business">
-                    <BusinessDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/bank/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="bank">
-                    <BankDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Catch-all redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </Router>
-      </AuthProvider>
-    </LanguageProvider>
+                {/* Public routes */}
+                <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/roles" element={<RoleSelection />} />
+
+                {/* Onboarding routes - require authentication */}
+                <Route
+                  path="/farmer/register"
+                  element={
+                    <ProtectedRoute>
+                      <FarmerOnboarding />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/business/register"
+                  element={
+                    <ProtectedRoute>
+                      <BusinessOnboarding />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bank/register"
+                  element={
+                    <ProtectedRoute>
+                      <BankOnboarding />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected dashboard routes - role-based access */}
+                <Route
+                  path="/farmer/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="farmer">
+                      <FarmerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/business/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="business">
+                      <BusinessDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bank/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="bank">
+                      <BankDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

@@ -73,20 +73,24 @@ const LandingPage = () => {
                     <h2 style={{ marginBottom: '2rem', fontSize: '1.5rem' }}>{t('landing.choose_language')}</h2>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-                        {['en', 'hi', 'mr'].map((lang) => (
+                        {[
+                            { code: 'en', label: 'English' },
+                            { code: 'hi', label: 'हिन्दी' },
+                            { code: 'mr', label: 'मराठी' },
+                            { code: 'te', label: 'తెలుగు' },
+                            { code: 'ta', label: 'தமிழ்' }
+                        ].map((lang) => (
                             <button
-                                key={lang}
+                                key={lang.code}
                                 className="btn btn-secondary"
-                                onClick={() => handleLanguageSelect(lang)}
+                                onClick={() => handleLanguageSelect(lang.code)}
                                 style={{
                                     justifyContent: 'space-between',
                                     padding: '1.25rem 2rem',
                                     fontSize: '1.1rem'
                                 }}
                             >
-                                <span>
-                                    {lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : 'मराठी'}
-                                </span>
+                                <span>{lang.label}</span>
                                 <ArrowRight size={20} />
                             </button>
                         ))}

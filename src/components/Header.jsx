@@ -96,8 +96,18 @@ const Header = () => {
 
                 {/* Breadcrumbs */}
                 {!isLanding && (
-                    <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                        <span style={{ opacity: 0.5 }}>/</span>
+                    <nav style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        marginLeft: '2rem',
+                        color: 'var(--text-muted)',
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}>
+                        <span style={{ opacity: 0.3, fontSize: '1.2rem', fontWeight: 300 }}>/</span>
                         {pathnames.map((name, index) => {
                             const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
                             const isLast = index === pathnames.length - 1;
@@ -106,11 +116,22 @@ const Header = () => {
                             return (
                                 <React.Fragment key={name}>
                                     {isLast ? (
-                                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{label}</span>
+                                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{label}</span>
                                     ) : (
-                                        <Link to={routeTo} style={{ textDecoration: 'none', color: 'inherit' }}>{label}</Link>
+                                        <Link
+                                            to={routeTo}
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: 'inherit',
+                                                transition: 'color 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.color = 'inherit'}
+                                        >
+                                            {label}
+                                        </Link>
                                     )}
-                                    {!isLast && <span style={{ opacity: 0.5 }}>/</span>}
+                                    {!isLast && <span style={{ opacity: 0.3 }}>/</span>}
                                 </React.Fragment>
                             );
                         })}
@@ -120,8 +141,8 @@ const Header = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 {/* Theme Toggle with Spotlight Effect */}
-                <div style={{ 
-                    display: 'flex', 
+                <div style={{
+                    display: 'flex',
                     alignItems: 'center',
                     marginRight: '0.5rem'
                 }}>
@@ -196,7 +217,7 @@ const Header = () => {
 
                             {showUserMenu && (
                                 <>
-                                    <div 
+                                    <div
                                         style={{
                                             position: 'fixed',
                                             top: 0,
