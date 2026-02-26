@@ -15,7 +15,6 @@ import BusinessDashboard from './pages/business/BusinessDashboard';
 import BankOnboarding from './pages/bank/BankOnboarding';
 import BankDashboard from './pages/bank/BankDashboard';
 import AuthCallback from './pages/AuthCallback';
-import DevModeBar from './components/DevModeBar';
 
 function App() {
   return (
@@ -23,7 +22,6 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="app-container">
-            <DevModeBar />
             <Header />
             <Routes>
               {/* Public routes */}

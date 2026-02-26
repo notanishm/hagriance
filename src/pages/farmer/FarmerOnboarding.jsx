@@ -17,22 +17,22 @@ const FarmerOnboarding = () => {
     const { t } = useTranslation();
     const { user, updateProfile } = useAuth();
     const navigate = useNavigate();
-    
+
     const [currentStep, setCurrentStep] = useState(0);
     const [isLocating, setIsLocating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    
+
     // Get Google OAuth user info
     const getGoogleUserInfo = () => {
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name ||
-                        '';
+        const fullName = user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.identities?.[0]?.identity_data?.full_name ||
+            user?.identities?.[0]?.identity_data?.name ||
+            '';
         return { fullName };
     };
-    
+
     // Form data state
     const [formData, setFormData] = useState({
         documentType: 'Aadhaar Card',
@@ -43,7 +43,7 @@ const FarmerOnboarding = () => {
         location: '',
         selectedCrops: []
     });
-    
+
     // Pre-fill form with Google OAuth data on mount
     useEffect(() => {
         if (user) {
@@ -70,20 +70,20 @@ const FarmerOnboarding = () => {
     const getUserInfo = () => {
         console.log('User object:', user);
         console.log('User metadata:', user?.user_metadata);
-        
+
         // Try multiple locations for email
-        const email = user?.email || 
-                     user?.user_metadata?.email || 
-                     user?.user_metadata?.user_name ||
-                     user?.identities?.[0]?.identity_data?.email;
-        
+        const email = user?.email ||
+            user?.user_metadata?.email ||
+            user?.user_metadata?.user_name ||
+            user?.identities?.[0]?.identity_data?.email;
+
         // Try multiple locations for name
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.user_metadata?.user_name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name;
-        
+        const fullName = user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.user_metadata?.user_name ||
+            user?.identities?.[0]?.identity_data?.full_name ||
+            user?.identities?.[0]?.identity_data?.name;
+
         return { email, fullName };
     };
 
@@ -111,32 +111,24 @@ const FarmerOnboarding = () => {
 
             // Get email and name from user object
             const { email: userEmail, fullName: googleName } = getUserInfo();
-            
+
             if (!userEmail) {
                 console.error('Could not find email in user object:', user);
                 throw new Error('Email not found. Please try logging in again.');
             }
 
-            console.log('Using email:', userEmail);
-            console.log('Google name:', googleName);
-
-            // Save farmer profile to Supabase
+            // Save farmer profile to Supabase (only use columns that exist in the profiles table)
             const { data, error } = await farmerService.createFarmerProfile(
                 user.id,
                 {
                     email: userEmail,
                     full_name: formData.fullName || googleName,
                     phone_number: formData.phoneNumber,
-                    aadhaar_number: formData.documentType === 'Aadhaar Card' 
-                        ? formData.documentNumber 
-                        : null,
-                    pan_number: formData.documentType === 'PAN Card' 
-                        ? formData.documentNumber 
-                        : null,
                     land_size: parseFloat(formData.landSize),
                     location: formData.location,
                     gps_coordinates: formData.location.includes('GPS') ? formData.location : null,
-                    crop_history: formData.selectedCrops,
+                    crops_history: formData.selectedCrops,
+                    onboarding_completed: true,
                 }
             );
 
@@ -298,11 +290,11 @@ const FarmerOnboarding = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <div className="input-group">
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Document Type</label>
-                                    <select 
-                                        className="btn btn-secondary" 
+                                    <select
+                                        className="btn btn-secondary"
                                         style={{ width: '100%', textAlign: 'left', padding: '1rem' }}
                                         value={formData.documentType}
-                                        onChange={(e) => setFormData({...formData, documentType: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
                                     >
                                         <option>Aadhaar Card</option>
                                         <option>PAN Card</option>
@@ -310,17 +302,17 @@ const FarmerOnboarding = () => {
                                 </div>
                                 <div className="input-group">
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Document Number *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         placeholder={formData.documentType === 'Aadhaar Card' ? 'XXXX-XXXX-XXXX' : 'XXXXXXXXXX'}
                                         value={formData.documentNumber}
-                                        onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
                                         style={{
                                             width: '100%',
                                             padding: '1rem',
                                             borderRadius: 'var(--radius-sm)',
                                             border: '1px solid var(--border)'
-                                        }} 
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -333,22 +325,22 @@ const FarmerOnboarding = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                 <div className="input-group">
                                     <label style={{ display: 'block', marginBottom: '0.5rem' }}>Full Name *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         value={formData.fullName}
-                                        onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                         placeholder="Enter your full name"
-                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} 
+                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
                                     />
                                 </div>
                                 <div className="input-group">
                                     <label style={{ display: 'block', marginBottom: '0.5rem' }}>Phone Number *</label>
-                                    <input 
-                                        type="tel" 
+                                    <input
+                                        type="tel"
                                         value={formData.phoneNumber}
-                                        onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                         placeholder="Enter phone number"
-                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} 
+                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
                                     />
                                 </div>
                             </div>
@@ -361,14 +353,14 @@ const FarmerOnboarding = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <div className="input-group">
                                     <label style={{ display: 'block', marginBottom: '0.5rem' }}>Land Size (in Acres) *</label>
-                                    <input 
-                                        type="number" 
-                                        placeholder="Enter acres" 
+                                    <input
+                                        type="number"
+                                        placeholder="Enter acres"
                                         value={formData.landSize}
-                                        onChange={(e) => setFormData({...formData, landSize: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, landSize: e.target.value })}
                                         min="0"
                                         step="0.01"
-                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }} 
+                                        style={{ width: '100%', padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
                                     />
                                 </div>
                                 <div className="input-group">
@@ -377,7 +369,7 @@ const FarmerOnboarding = () => {
                                         <input
                                             type="text"
                                             value={formData.location}
-                                            onChange={(e) => setFormData({...formData, location: e.target.value})}
+                                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                                             placeholder="Enter location or auto-detect"
                                             style={{ flex: 1, padding: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
                                         />
@@ -441,7 +433,7 @@ const FarmerOnboarding = () => {
                             <ArrowLeft size={18} /> {t('common.back')}
                         </button>
                         <button onClick={handleNext} className="btn btn-primary" disabled={isSubmitting}>
-                            {currentStep === steps.length - 1 
+                            {currentStep === steps.length - 1
                                 ? (isSubmitting ? 'Saving...' : t('common.submit'))
                                 : t('common.next')
                             } <ArrowRight size={18} />

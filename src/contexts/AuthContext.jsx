@@ -18,25 +18,6 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // DEV MODE BYPASS
-    if (import.meta.env.VITE_DEV_MODE === 'true') {
-      import('../data/mockData').then(({ mockUsers }) => {
-        const devRole = localStorage.getItem('dev_role') || 'business';
-        const mockProfile = mockUsers[devRole] || mockUsers.business;
-
-        const mockUser = {
-          id: mockProfile.id,
-          email: mockProfile.email,
-          user_metadata: { full_name: mockProfile.full_name }
-        };
-
-        setUser(mockUser);
-        setUserProfile(mockProfile);
-        setLoading(false);
-      });
-      return;
-    }
-
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -74,7 +55,6 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (error) {
-        // PGRST116 means no rows found - this is normal for new users
         if (error.code === 'PGRST116') {
           setUserProfile(null);
           return;
@@ -83,7 +63,6 @@ export const AuthProvider = ({ children }) => {
       }
       setUserProfile(data);
     } catch (error) {
-      // Only log real errors, not "no profile found" for new users
       if (error.code !== 'PGRST116') {
         console.error('Error loading user profile:', error);
       }
@@ -91,28 +70,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Get the correct redirect URL based on environment
   const getRedirectUrl = () => {
-    // Use Vercel URL if available, otherwise fallback to window.location.origin
     const vercelUrl = import.meta.env.VITE_VERCEL_URL;
     if (vercelUrl) {
       return `https://${vercelUrl}/auth/callback`;
     }
-    // For production deployment
     if (window.location.hostname === 'agriance.vercel.app') {
       return 'https://agriance.vercel.app/auth/callback';
     }
-    // For local development
     return `${window.location.origin}/auth/callback`;
   };
 
-  // Sign up with email and password
   const signUp = async (email, password, metadata = {}) => {
     try {
       setError(null);
       const redirectUrl = getRedirectUrl();
-      console.log('Signup redirect URL:', redirectUrl);
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -131,7 +103,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign in with email and password
   const signIn = async (email, password) => {
     try {
       setError(null);
@@ -149,7 +120,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
       setError(null);
@@ -164,16 +134,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Reset password
   const resetPassword = async (email) => {
     try {
       setError(null);
       const redirectUrl = getRedirectUrl();
-
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
-
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
@@ -183,13 +150,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Update user profile
   const updateProfile = async (updates) => {
     try {
       setError(null);
-
       if (!user) throw new Error('No user logged in');
-
       const { data, error } = await supabase
         .from('profiles')
         .upsert({
@@ -199,9 +163,7 @@ export const AuthProvider = ({ children }) => {
         })
         .select()
         .single();
-
       if (error) throw error;
-
       setUserProfile(data);
       return { data, error: null };
     } catch (error) {
@@ -211,14 +173,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Update user metadata
   const updateUserMetadata = async (metadata) => {
     try {
       setError(null);
       const { data, error } = await supabase.auth.updateUser({
         data: metadata,
       });
-
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
@@ -228,13 +188,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Sign in with Google OAuth
   const signInWithGoogle = async () => {
     try {
       setError(null);
       const redirectUrl = getRedirectUrl();
-      console.log('Google OAuth redirect URL:', redirectUrl);
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -245,7 +202,6 @@ export const AuthProvider = ({ children }) => {
           },
         },
       });
-
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
@@ -253,11 +209,6 @@ export const AuthProvider = ({ children }) => {
       setError(message);
       return { data: null, error: message };
     }
-  };
-
-  const switchDevRole = (role) => {
-    localStorage.setItem('dev_role', role);
-    window.location.reload();
   };
 
   const value = {
@@ -268,14 +219,13 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
+    logout: signOut, // Alias for backward compatibility
     signInWithGoogle,
     resetPassword,
     updateProfile,
     updateUserMetadata,
     isAuthenticated: !!user,
-    role: userProfile?.role || null,
-    isDevMode: import.meta.env.VITE_DEV_MODE === 'true',
-    switchDevRole
+    role: userProfile?.role || null
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

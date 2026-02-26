@@ -17,21 +17,21 @@ const BankOnboarding = () => {
     const { t } = useTranslation();
     const { user, updateProfile } = useAuth();
     const navigate = useNavigate();
-    
+
     const [currentStep, setCurrentStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    
+
     // Get Google OAuth user info
     const getGoogleUserInfo = () => {
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name ||
-                        '';
+        const fullName = user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.identities?.[0]?.identity_data?.full_name ||
+            user?.identities?.[0]?.identity_data?.name ||
+            '';
         return { fullName };
     };
-    
+
     // Form data state
     const [formData, setFormData] = useState({
         bankName: '',
@@ -42,7 +42,7 @@ const BankOnboarding = () => {
         branchName: '',
         bankCode: ''
     });
-    
+
     // Pre-fill form with Google OAuth data on mount
     useEffect(() => {
         if (user) {
@@ -68,24 +68,24 @@ const BankOnboarding = () => {
         setIsSubmitting(true);
         setError(null);
 
-    // Extract user info from Google OAuth or regular auth
-    const getUserInfo = () => {
-        console.log('User object:', user);
-        console.log('User metadata:', user?.user_metadata);
-        
-        const email = user?.email || 
-                     user?.user_metadata?.email || 
-                     user?.user_metadata?.user_name ||
-                     user?.identities?.[0]?.identity_data?.email;
-        
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.user_metadata?.user_name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name;
-        
-        return { email, fullName };
-    };
+        // Extract user info from Google OAuth or regular auth
+        const getUserInfo = () => {
+            console.log('User object:', user);
+            console.log('User metadata:', user?.user_metadata);
+
+            const email = user?.email ||
+                user?.user_metadata?.email ||
+                user?.user_metadata?.user_name ||
+                user?.identities?.[0]?.identity_data?.email;
+
+            const fullName = user?.user_metadata?.full_name ||
+                user?.user_metadata?.name ||
+                user?.user_metadata?.user_name ||
+                user?.identities?.[0]?.identity_data?.full_name ||
+                user?.identities?.[0]?.identity_data?.name;
+
+            return { email, fullName };
+        };
 
         try {
             // Validate required fields
@@ -95,7 +95,7 @@ const BankOnboarding = () => {
 
             // Get email from user object
             const { email: userEmail, fullName: googleName } = getUserInfo();
-            
+
             if (!userEmail) {
                 console.error('Could not find email in user object:', user);
                 throw new Error('Email not found. Please try logging in again.');
@@ -103,15 +103,18 @@ const BankOnboarding = () => {
 
             console.log('Using email:', userEmail);
 
-            // Save bank profile to Supabase
+            // Save bank profile to Supabase (only use columns that exist in the profiles table)
             const { data, error } = await bankService.createBankProfile(
                 user.id,
                 {
                     email: userEmail,
+                    full_name: googleName || formData.bankName,
                     bank_name: formData.bankName,
-                    branch_name: formData.headquartersCity || 'Main Branch',
-                    bank_code: formData.rbiLicense,
-                    license_number: formData.rbiLicense,
+                    rbi_license_number: formData.rbiLicense,
+                    branch_details: {
+                        headquarters: formData.headquartersCity || 'Main Branch',
+                    },
+                    onboarding_completed: true,
                 }
             );
 

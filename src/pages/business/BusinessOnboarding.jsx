@@ -11,22 +11,22 @@ const BusinessOnboarding = () => {
     const { t } = useTranslation();
     const { user, updateProfile } = useAuth();
     const navigate = useNavigate();
-    
+
     const [step, setStep] = useState(1);
     const [regFile, setRegFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    
+
     // Get Google OAuth user info
     const getGoogleUserInfo = () => {
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name ||
-                        '';
+        const fullName = user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.identities?.[0]?.identity_data?.full_name ||
+            user?.identities?.[0]?.identity_data?.name ||
+            '';
         return { fullName };
     };
-    
+
     // Form data state
     const [formData, setFormData] = useState({
         companyName: '',
@@ -37,7 +37,7 @@ const BusinessOnboarding = () => {
         accountNumber: '',
         ifscCode: ''
     });
-    
+
     // Pre-fill form with Google OAuth data on mount
     useEffect(() => {
         if (user) {
@@ -63,18 +63,18 @@ const BusinessOnboarding = () => {
     const getUserInfo = () => {
         console.log('User object:', user);
         console.log('User metadata:', user?.user_metadata);
-        
-        const email = user?.email || 
-                     user?.user_metadata?.email || 
-                     user?.user_metadata?.user_name ||
-                     user?.identities?.[0]?.identity_data?.email;
-        
-        const fullName = user?.user_metadata?.full_name || 
-                        user?.user_metadata?.name ||
-                        user?.user_metadata?.user_name ||
-                        user?.identities?.[0]?.identity_data?.full_name ||
-                        user?.identities?.[0]?.identity_data?.name;
-        
+
+        const email = user?.email ||
+            user?.user_metadata?.email ||
+            user?.user_metadata?.user_name ||
+            user?.identities?.[0]?.identity_data?.email;
+
+        const fullName = user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.user_metadata?.user_name ||
+            user?.identities?.[0]?.identity_data?.full_name ||
+            user?.identities?.[0]?.identity_data?.name;
+
         return { email, fullName };
     };
 
@@ -94,25 +94,26 @@ const BusinessOnboarding = () => {
 
             // Get email from user object
             const { email: userEmail, fullName: googleName } = getUserInfo();
-            
+
             if (!userEmail) {
                 console.error('Could not find email in user object:', user);
                 throw new Error('Email not found. Please try logging in again.');
             }
 
-            console.log('Using email:', userEmail);
-
-            // Save business profile to Supabase
+            // Save business profile to Supabase (only use columns that exist in the profiles table)
             const { data, error } = await businessService.createBusinessProfile(
                 user.id,
                 {
                     email: userEmail,
+                    full_name: googleName || formData.companyName,
                     business_name: formData.companyName,
                     business_gst: formData.gstNumber,
                     business_type: formData.businessType || 'Agricultural Trader',
                     registration_number: formData.registrationNumber,
+                    bank_name: formData.bankName,
                     bank_account: formData.accountNumber,
                     ifsc_code: formData.ifscCode,
+                    onboarding_completed: true,
                 }
             );
 
@@ -176,29 +177,29 @@ const BusinessOnboarding = () => {
                                 <h2>Register Your Business</h2>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <input 
-                                    type="text" 
-                                    placeholder="Company Name *" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="Company Name *"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.companyName}
-                                    onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                                 />
-                                <input 
-                                    type="text" 
-                                    placeholder="GST Number *" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="GST Number *"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.gstNumber}
-                                    onChange={(e) => setFormData({...formData, gstNumber: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
                                 />
-                                <input 
-                                    type="text" 
-                                    placeholder="Business Type (Optional)" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="Business Type (Optional)"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.businessType}
-                                    onChange={(e) => setFormData({...formData, businessType: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -231,29 +232,29 @@ const BusinessOnboarding = () => {
                                 <h2>Financial Details</h2>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <input 
-                                    type="text" 
-                                    placeholder="Bank Name *" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="Bank Name *"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.bankName}
-                                    onChange={(e) => setFormData({...formData, bankName: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
                                 />
-                                <input 
-                                    type="text" 
-                                    placeholder="Account Number *" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="Account Number *"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.accountNumber}
-                                    onChange={(e) => setFormData({...formData, accountNumber: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
                                 />
-                                <input 
-                                    type="text" 
-                                    placeholder="IFSC Code *" 
-                                    className="card" 
+                                <input
+                                    type="text"
+                                    placeholder="IFSC Code *"
+                                    className="card"
                                     style={{ padding: '1rem', width: '100%' }}
                                     value={formData.ifscCode}
-                                    onChange={(e) => setFormData({...formData, ifscCode: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
                                 />
                             </div>
                         </div>
@@ -264,7 +265,7 @@ const BusinessOnboarding = () => {
                             <ArrowLeft size={18} /> Back
                         </button>
                         <button onClick={handleNext} className="btn btn-primary" disabled={isSubmitting}>
-                            {step === 3 
+                            {step === 3
                                 ? (isSubmitting ? 'Saving...' : 'Complete Setup')
                                 : 'Next Step'
                             } <ArrowRight size={18} />

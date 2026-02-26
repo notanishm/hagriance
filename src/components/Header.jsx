@@ -133,7 +133,7 @@ const Header = () => {
                     {[
                         { code: 'en', label: 'EN' },
                         { code: 'hi', label: 'हि' },
-                        { code: 'mr', label: 'మ' },
+                        { code: 'mr', label: 'म' },
                         { code: 'te', label: 'తె' },
                         { code: 'ta', label: 'த' }
                     ].map((lang) => (
