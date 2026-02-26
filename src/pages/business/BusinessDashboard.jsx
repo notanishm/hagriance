@@ -10,11 +10,13 @@ import ContractFlow from './ContractFlow';
 import LoanApplicationFlow from '../../components/LoanApplicationFlow';
 import { cropCategories } from '../../data/crops';
 import { useAuth } from '../../contexts/AuthContext';
-import { businessService } from '../../services/database';
+import { mockFarmers, mockContracts, mockUsers } from '../../data/mockData';
+
+const PROFILE_CACHE_KEY = 'agriance_cached_profile';
 
 const BusinessDashboard = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const [showModal, setShowModal] = useState(false);
     const [selectedFarmer, setSelectedFarmer] = useState(null);
     const [showContract, setShowContract] = useState(false);
@@ -28,36 +30,39 @@ const BusinessDashboard = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const fetchData = async () => {
-        if (!user) return;
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            // Fetch farmers
-            const { data: farmersData } = await businessService.searchFarmers(searchTerm);
-            setFarmers(farmersData || []);
-
-            // Fetch business contracts
-            const { data: contractsData } = await businessService.getBusinessContracts(user.id);
-            setContracts(contractsData || []);
-
-            // Fetch business profile
-            const { data: profileData } = await businessService.getBusinessProfile(user.id);
-            setProfile(profileData || (user.role === 'business' ? user : null));
-
-        } catch (err) {
-            console.error('Error fetching business data:', err);
-            setError(t('common.error'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchData();
-    }, [user, searchTerm]);
+        // Load data from mock + localStorage (bypass Supabase for demo)
+        const loadData = () => {
+            try {
+                // Load profile: try cached → userProfile → mock fallback
+                let cachedProfile = null;
+                try {
+                    const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+                    if (cached) cachedProfile = JSON.parse(cached);
+                } catch (e) { /* ignore */ }
+
+                setProfile(cachedProfile || userProfile || mockUsers.business);
+
+                // Use mock data directly
+                setFarmers(mockFarmers);
+                setContracts(mockContracts);
+            } catch (err) {
+                console.error('Error loading business data:', err);
+                setError(t('common.error'));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const timer = setTimeout(loadData, 300);
+        return () => clearTimeout(timer);
+    }, [user, userProfile]);
+
+    // Filter farmers by search term (client-side)
+    const filteredFarmers = farmers.filter(f =>
+        !searchTerm || f.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.location?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const activeContractsCount = contracts.filter(c => c.status === 'active' || c.status === 'in_progress').length;
     const totalContractValue = contracts.reduce((sum, c) => sum + (c.total_value || 0), 0);
@@ -82,7 +87,7 @@ const BusinessDashboard = () => {
                     <div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.8, marginBottom: '0.5rem', color: 'var(--secondary)' }}>Procurement Management</div>
                         <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0 }}>{t('common.welcome')}, {profile?.business_name || 'AgriCorp'}</h1>
-                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.8 }}>Managing {activeContractsCount} active supply chains across {farmers.length} verified farmers.</p>
+                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.8 }}>Managing {activeContractsCount} active supply chains across {filteredFarmers.length} verified farmers.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                         <div style={{ textAlign: 'right', paddingRight: '1.5rem', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
@@ -169,13 +174,13 @@ const BusinessDashboard = () => {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                    {farmers.length === 0 ? (
+                                    {filteredFarmers.length === 0 ? (
                                         <div className="card" style={{ padding: '5rem', textAlign: 'center' }}>
                                             <User size={64} color="var(--border)" style={{ marginBottom: '1.5rem' }} />
                                             <h3 style={{ color: 'var(--text-muted)' }}>{t('marketplace.no_farmers')}</h3>
                                         </div>
                                     ) : (
-                                        farmers.map(farmer => (
+                                        filteredFarmers.map(farmer => (
                                             <motion.div key={farmer.id} whileHover={{ x: 5, boxShadow: 'var(--shadow-md)' }} className="card" style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', padding: '2rem' }}>
                                                 <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', border: '1px solid var(--border-light)' }}>
                                                     {farmer.full_name?.charAt(0) || '👨‍🌾'}
@@ -377,7 +382,7 @@ const BusinessDashboard = () => {
                 {showLoanFlow && <LoanApplicationFlow onClose={() => setShowLoanFlow(false)} onComplete={() => setShowLoanFlow(false)} />}
                 {showContract && selectedFarmer && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '2rem' }}>
-                        <ContractFlow farmer={selectedFarmer} onComplete={() => { setShowContract(false); setSelectedFarmer(null); fetchData(); }} />
+                        <ContractFlow farmer={selectedFarmer} onComplete={() => { setShowContract(false); setSelectedFarmer(null); }} />
                     </div>
                 )}
             </AnimatePresence>

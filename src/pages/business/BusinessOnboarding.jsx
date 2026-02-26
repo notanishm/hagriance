@@ -5,11 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, FileText, Banknote, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import FileUpload from '../../components/FileUpload';
 import { useAuth } from '../../contexts/AuthContext';
-import { businessService } from '../../services/database';
 
 const BusinessOnboarding = () => {
     const { t } = useTranslation();
-    const { user, updateProfile } = useAuth();
+    const { user, setLocalProfile } = useAuth();
     const navigate = useNavigate();
 
     const [step, setStep] = useState(1);
@@ -59,25 +58,6 @@ const BusinessOnboarding = () => {
         }
     };
 
-    // Extract user info from Google OAuth or regular auth
-    const getUserInfo = () => {
-        console.log('User object:', user);
-        console.log('User metadata:', user?.user_metadata);
-
-        const email = user?.email ||
-            user?.user_metadata?.email ||
-            user?.user_metadata?.user_name ||
-            user?.identities?.[0]?.identity_data?.email;
-
-        const fullName = user?.user_metadata?.full_name ||
-            user?.user_metadata?.name ||
-            user?.user_metadata?.user_name ||
-            user?.identities?.[0]?.identity_data?.full_name ||
-            user?.identities?.[0]?.identity_data?.name;
-
-        return { email, fullName };
-    };
-
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setError(null);
@@ -92,47 +72,36 @@ const BusinessOnboarding = () => {
                 throw new Error('Please fill in all financial details');
             }
 
-            // Get email from user object
-            const { email: userEmail, fullName: googleName } = getUserInfo();
-
-            if (!userEmail) {
-                console.error('Could not find email in user object:', user);
-                throw new Error('Email not found. Please try logging in again.');
-            }
-
-            // Save business profile to Supabase (only use columns that exist in the profiles table)
-            const { data, error } = await businessService.createBusinessProfile(
-                user.id,
-                {
-                    email: userEmail,
-                    full_name: googleName || formData.companyName,
-                    business_name: formData.companyName,
-                    business_gst: formData.gstNumber,
-                    business_type: formData.businessType || 'Agricultural Trader',
-                    registration_number: formData.registrationNumber,
-                    bank_name: formData.bankName,
-                    bank_account: formData.accountNumber,
-                    ifsc_code: formData.ifscCode,
-                    onboarding_completed: true,
-                }
-            );
-
-            if (error) {
-                throw new Error(error);
-            }
-
-            // Update the profile in AuthContext
-            await updateProfile({
+            // Build profile and save to localStorage (bypassing Supabase for demo)
+            const userEmail = user?.email || user?.user_metadata?.email || 'demo@agriance.com';
+            const profile = {
+                id: user?.id || 'demo-business',
+                email: userEmail,
                 role: 'business',
-                onboarding_completed: true,
+                full_name: formData.companyName,
                 business_name: formData.companyName,
                 business_gst: formData.gstNumber,
-            });
+                business_type: formData.businessType || 'Agricultural Trader',
+                registration_number: formData.registrationNumber,
+                bank_name: formData.bankName,
+                bank_account: formData.accountNumber,
+                ifsc_code: formData.ifscCode,
+                onboarding_completed: true,
+                updated_at: new Date().toISOString(),
+            };
 
-            // Success - navigate to dashboard
+            // Save to localStorage via AuthContext
+            setLocalProfile(profile);
+
+            // Also cache the raw form data
+            try { localStorage.setItem('agriance_business_data', JSON.stringify(formData)); } catch (e) { /* ignore */ }
+
+            console.log('Business profile saved to localStorage:', profile);
+
+            // Navigate to dashboard
             navigate('/business/dashboard');
         } catch (err) {
-            console.error('Error saving business profile:', err);
+            console.error('Business onboarding error:', err);
             setError(err.message || 'Failed to save profile. Please try again.');
             setIsSubmitting(false);
         }

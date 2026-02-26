@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Landmark, ShieldCheck, FileText, Globe, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { bankService } from '../../services/database';
 
 const steps = [
     { id: 'bank_info', title: 'Institution Info', icon: <Landmark /> },
@@ -15,7 +14,7 @@ const steps = [
 
 const BankOnboarding = () => {
     const { t } = useTranslation();
-    const { user, updateProfile } = useAuth();
+    const { user, setLocalProfile } = useAuth();
     const navigate = useNavigate();
 
     const [currentStep, setCurrentStep] = useState(0);
@@ -68,71 +67,40 @@ const BankOnboarding = () => {
         setIsSubmitting(true);
         setError(null);
 
-        // Extract user info from Google OAuth or regular auth
-        const getUserInfo = () => {
-            console.log('User object:', user);
-            console.log('User metadata:', user?.user_metadata);
-
-            const email = user?.email ||
-                user?.user_metadata?.email ||
-                user?.user_metadata?.user_name ||
-                user?.identities?.[0]?.identity_data?.email;
-
-            const fullName = user?.user_metadata?.full_name ||
-                user?.user_metadata?.name ||
-                user?.user_metadata?.user_name ||
-                user?.identities?.[0]?.identity_data?.full_name ||
-                user?.identities?.[0]?.identity_data?.name;
-
-            return { email, fullName };
-        };
-
         try {
-            // Validate required fields
-            if (!formData.bankName || !formData.rbiLicense) {
-                throw new Error('Please fill in bank name and RBI license number');
-            }
-
-            // Get email from user object
-            const { email: userEmail, fullName: googleName } = getUserInfo();
-
-            if (!userEmail) {
-                console.error('Could not find email in user object:', user);
-                throw new Error('Email not found. Please try logging in again.');
-            }
-
-            console.log('Using email:', userEmail);
-
-            // Save bank profile to Supabase (only use columns that exist in the profiles table)
-            const { data, error } = await bankService.createBankProfile(
-                user.id,
-                {
-                    email: userEmail,
-                    full_name: googleName || formData.bankName,
-                    bank_name: formData.bankName,
-                    rbi_license_number: formData.rbiLicense,
-                    branch_details: {
-                        headquarters: formData.headquartersCity || 'Main Branch',
-                    },
-                    onboarding_completed: true,
-                }
-            );
-
-            if (error) {
-                throw new Error(error);
-            }
-
-            // Update the profile in AuthContext
-            await updateProfile({
+            // Build profile and save to localStorage (bypassing Supabase for demo)
+            const userEmail = user?.email || user?.user_metadata?.email || 'demo@agriance.com';
+            const googleName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+            const profile = {
+                id: user?.id || 'demo-bank',
+                email: userEmail,
                 role: 'bank',
-                onboarding_completed: true,
+                full_name: googleName || formData.bankName,
                 bank_name: formData.bankName,
-            });
+                rbi_license_number: formData.rbiLicense,
+                institution_type: formData.institutionType,
+                headquarters_city: formData.headquartersCity,
+                branch_details: {
+                    headquarters: formData.headquartersCity || 'Main Branch',
+                },
+                onboarding_completed: true,
+                updated_at: new Date().toISOString(),
+            };
 
-            // Success - navigate to dashboard
-            navigate('/bank/dashboard');
+            // Save to localStorage via AuthContext
+            setLocalProfile(profile);
+
+            // Also cache the raw form data
+            try { localStorage.setItem('agriance_bank_data', JSON.stringify(formData)); } catch (e) { /* ignore */ }
+
+            console.log('Bank profile saved to localStorage:', profile);
+
+            // Navigate to dashboard
+            setTimeout(() => {
+                navigate('/bank/dashboard');
+            }, 400);
         } catch (err) {
-            console.error('Error saving bank profile:', err);
+            console.error('Bank onboarding error:', err);
             setError(err.message || 'Failed to save profile. Please try again.');
             setIsSubmitting(false);
         }

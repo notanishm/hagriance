@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, MapPin, ClipboardList, ShieldCheck, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { farmerService } from '../../services/database';
 
 const steps = [
     { id: 'kyc', title: 'KYC Verification', icon: <ShieldCheck /> },
@@ -15,7 +14,7 @@ const steps = [
 
 const FarmerOnboarding = () => {
     const { t } = useTranslation();
-    const { user, updateProfile } = useAuth();
+    const { user, setLocalProfile } = useAuth();
     const navigate = useNavigate();
 
     const [currentStep, setCurrentStep] = useState(0);
@@ -61,30 +60,9 @@ const FarmerOnboarding = () => {
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
         } else {
-            // Final step - save to Supabase
+            // Final step - save locally & navigate
             await handleSubmit();
         }
-    };
-
-    // Extract user info from Google OAuth or regular auth
-    const getUserInfo = () => {
-        console.log('User object:', user);
-        console.log('User metadata:', user?.user_metadata);
-
-        // Try multiple locations for email
-        const email = user?.email ||
-            user?.user_metadata?.email ||
-            user?.user_metadata?.user_name ||
-            user?.identities?.[0]?.identity_data?.email;
-
-        // Try multiple locations for name
-        const fullName = user?.user_metadata?.full_name ||
-            user?.user_metadata?.name ||
-            user?.user_metadata?.user_name ||
-            user?.identities?.[0]?.identity_data?.full_name ||
-            user?.identities?.[0]?.identity_data?.name;
-
-        return { email, fullName };
     };
 
     const handleSubmit = async () => {
@@ -109,45 +87,37 @@ const FarmerOnboarding = () => {
                 throw new Error('Please select at least one crop');
             }
 
-            // Get email and name from user object
-            const { email: userEmail, fullName: googleName } = getUserInfo();
-
-            if (!userEmail) {
-                console.error('Could not find email in user object:', user);
-                throw new Error('Email not found. Please try logging in again.');
-            }
-
-            // Save farmer profile to Supabase (only use columns that exist in the profiles table)
-            const { data, error } = await farmerService.createFarmerProfile(
-                user.id,
-                {
-                    email: userEmail,
-                    full_name: formData.fullName || googleName,
-                    phone_number: formData.phoneNumber,
-                    land_size: parseFloat(formData.landSize),
-                    location: formData.location,
-                    gps_coordinates: formData.location.includes('GPS') ? formData.location : null,
-                    crops_history: formData.selectedCrops,
-                    onboarding_completed: true,
-                }
-            );
-
-            if (error) {
-                throw new Error(error);
-            }
-
-            // Update the profile in AuthContext
-            await updateProfile({
+            // Build profile and save to localStorage (bypassing Supabase for demo)
+            const userEmail = user?.email || user?.user_metadata?.email || 'demo@agriance.com';
+            const profile = {
+                id: user?.id || 'demo-farmer',
+                email: userEmail,
                 role: 'farmer',
-                onboarding_completed: true,
                 full_name: formData.fullName,
+                phone_number: formData.phoneNumber,
                 land_size: parseFloat(formData.landSize),
-            });
+                location: formData.location,
+                crops_history: formData.selectedCrops,
+                document_type: formData.documentType,
+                document_number: formData.documentNumber,
+                onboarding_completed: true,
+                updated_at: new Date().toISOString(),
+            };
 
-            // Success - navigate to dashboard
-            navigate('/farmer/dashboard');
+            // Save to localStorage via AuthContext
+            setLocalProfile(profile);
+
+            // Also cache the raw form data for potential later use
+            try { localStorage.setItem('agriance_farmer_data', JSON.stringify(formData)); } catch (e) { /* ignore */ }
+
+            console.log('Farmer profile saved to localStorage:', profile);
+
+            // Navigate to dashboard
+            setTimeout(() => {
+                navigate('/farmer/dashboard');
+            }, 400);
         } catch (err) {
-            console.error('Error saving farmer profile:', err);
+            console.error('Farmer onboarding error:', err);
             setError(err.message || 'Failed to save profile. Please try again.');
             setIsSubmitting(false);
         }

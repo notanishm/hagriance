@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Wallet, FileCheck, Tractor, TrendingUp, ShieldCheck, Microscope, ThermometerSun, AlertCircle } from 'lucide-react';
+import { Bell, Wallet, FileCheck, Tractor, TrendingUp, ShieldCheck, Microscope, ThermometerSun, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { farmerService, businessService } from '../../services/database';
 import LoanApplicationFlow from '../../components/LoanApplicationFlow';
-import { mockMarketInsights, mockNotifications } from '../../data/mockData';
+import { mockMarketInsights, mockNotifications, mockContracts, mockLoans, mockUsers } from '../../data/mockData';
+
+const PROFILE_CACHE_KEY = 'agriance_cached_profile';
 
 const FarmerDashboard = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const [contracts, setContracts] = useState([]);
     const [loans, setLoans] = useState([]);
     const [profile, setProfile] = useState(null);
@@ -19,46 +20,38 @@ const FarmerDashboard = () => {
     const [notifications, setNotifications] = useState(mockNotifications);
     const [showNotifications, setShowNotifications] = useState(false);
 
-    const fetchData = async () => {
-        if (!user) return;
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            const { data: contractsData, error: contractsError } = await farmerService.getFarmerContracts(user.id);
-            if (contractsError) throw contractsError;
-            setContracts(contractsData || []);
-
-            const { data: loansData, error: loansError } = await farmerService.getFarmerLoans(user.id);
-            if (loansError) throw loansError;
-            setLoans(loansData || []);
-
-            const { data: profileData, error: profileError } = await farmerService.getFarmerProfile(user.id);
-            if (profileError) throw profileError;
-            setProfile(profileData);
-
-        } catch (err) {
-            console.error('Error fetching farmer data:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchData();
-    }, [user]);
+        // Load data from mock + localStorage (bypass Supabase for demo)
+        const loadData = () => {
+            try {
+                // Load profile: try cached → userProfile → mock fallback
+                let cachedProfile = null;
+                try {
+                    const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+                    if (cached) cachedProfile = JSON.parse(cached);
+                } catch (e) { /* ignore */ }
 
-    const handleContractAction = async (contractId, action) => {
-        try {
-            const status = action === 'accept' ? 'active' : 'rejected';
-            const { error } = await businessService.updateContractStatus(contractId, status);
-            if (error) throw error;
-            setContracts(prev => prev.map(c => c.id === contractId ? { ...c, status } : c));
-        } catch (err) {
-            console.error('Error updating contract:', err);
-        }
+                setProfile(cachedProfile || userProfile || mockUsers.farmer);
+
+                // Use mock contracts and loans directly
+                setContracts(mockContracts);
+                setLoans(mockLoans);
+            } catch (err) {
+                console.error('Error loading farmer data:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Small delay to simulate loading for polish
+        const timer = setTimeout(loadData, 300);
+        return () => clearTimeout(timer);
+    }, [user, userProfile]);
+
+    const handleContractAction = (contractId, action) => {
+        const status = action === 'accept' ? 'active' : 'rejected';
+        setContracts(prev => prev.map(c => c.id === contractId ? { ...c, status } : c));
     };
 
     const activeContractsCount = contracts.filter(c => c.status === 'active' || c.status === 'in_progress').length;
@@ -343,7 +336,7 @@ const FarmerDashboard = () => {
             </main>
 
             <AnimatePresence>
-                {showLoanModal && <LoanApplicationFlow onClose={() => setShowLoanModal(false)} onComplete={fetchData} />}
+                {showLoanModal && <LoanApplicationFlow onClose={() => setShowLoanModal(false)} onComplete={() => setShowLoanModal(false)} />}
             </AnimatePresence>
         </div>
     );

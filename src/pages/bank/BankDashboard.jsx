@@ -4,16 +4,66 @@ import { useTranslation } from '../../contexts/LanguageContext';
 import {
     Search, Filter, Landmark, User, FileText,
     BarChart3, CheckCircle, XCircle, ChevronRight,
-    AlertCircle, TrendingUp, Calendar, Clock, PieChart, Info
+    AlertCircle, TrendingUp, Calendar, Clock, PieChart, Info, ShieldCheck
 } from 'lucide-react';
 import RiskAssessment from '../../components/RiskAssessment';
 import { useAuth } from '../../contexts/AuthContext';
-import { bankService } from '../../services/database';
+import { mockLoans, mockUsers } from '../../data/mockData';
+
+const PROFILE_CACHE_KEY = 'agriance_cached_profile';
+
+// Extended loan data for richer bank demo
+const bankMockLoans = [
+    ...mockLoans,
+    {
+        id: 'LN-004',
+        application_number: 'APL-1736500222',
+        farmer_id: 'farmer-3',
+        applicant_name: 'Arjun More',
+        applicant_type: 'farmer',
+        loan_amount: 75000,
+        tenure_months: 18,
+        purpose: 'Polyhouse Construction',
+        bank_name: 'State Agri Bank',
+        status: 'pending',
+        risk_score: 91,
+        created_at: '2025-02-20T08:30:00Z'
+    },
+    {
+        id: 'LN-005',
+        application_number: 'APL-1736600333',
+        farmer_id: 'biz-1',
+        applicant_name: 'AgriCorp India Ltd',
+        applicant_type: 'business',
+        loan_amount: 500000,
+        tenure_months: 36,
+        purpose: 'Working Capital for Procurement',
+        bank_name: 'State Agri Bank',
+        status: 'approved',
+        risk_score: 85,
+        created_at: '2025-01-15T12:00:00Z',
+        approved_at: '2025-01-18T10:00:00Z'
+    },
+    {
+        id: 'LN-006',
+        application_number: 'APL-1736700444',
+        farmer_id: 'farmer-4',
+        applicant_name: 'Vikas Deshmukh',
+        applicant_type: 'farmer',
+        loan_amount: 200000,
+        tenure_months: 24,
+        purpose: 'Land Leveling & Soil Treatment',
+        bank_name: 'State Agri Bank',
+        status: 'pending',
+        risk_score: 58,
+        created_at: '2025-02-24T14:20:00Z'
+    }
+];
 
 const BankDashboard = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState('applications'); // applications, portfolio, analytics
+    const { user, userProfile } = useAuth();
+    const [activeTab, setActiveTab] = useState('applications');
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -21,37 +71,36 @@ const BankDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchData = async () => {
-        if (!user) return;
-
-        try {
-            setLoading(true);
-            setError(null);
-            const { data: loansData } = await bankService.getLoanApplications({});
-            setLoanApplications(loansData || []);
-        } catch (err) {
-            console.error('Error fetching bank data:', err);
-            setError(t('common.error'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchData();
+        const loadData = () => {
+            try {
+                setLoanApplications(bankMockLoans);
+            } catch (err) {
+                console.error('Error loading bank data:', err);
+                setError(t('common.error'));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const timer = setTimeout(loadData, 300);
+        return () => clearTimeout(timer);
     }, [user]);
 
-    const handleLoanAction = async (loanId, status) => {
-        try {
-            const reason = status === 'approved' ? 'Meets institutional risk threshold' : 'High credit risk or low collateral visibility';
-            const { error } = await bankService.updateLoanStatus(loanId, status, reason);
-            if (error) throw error;
-            setLoanApplications(prev => prev.map(l => l.id === loanId ? { ...l, status } : l));
-            setSelectedApplication(prev => prev?.id === loanId ? { ...prev, status } : prev);
-        } catch (err) {
-            alert(`Error updating loan: ${err.message}`);
-        }
+    const handleLoanAction = (loanId, status) => {
+        setLoanApplications(prev => prev.map(l => l.id === loanId ? { ...l, status } : l));
+        setSelectedApplication(prev => prev?.id === loanId ? { ...prev, status } : prev);
     };
+
+    // Load bank name from cached profile
+    let bankName = 'State Agri Bank';
+    try {
+        const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            bankName = parsed.bank_name || bankName;
+        }
+    } catch (e) { /* ignore */ }
 
     const pendingCount = loanApplications.filter(l => l.status === 'pending').length;
     const approvedLoans = loanApplications.filter(l => l.status === 'approved' || l.status === 'active');
@@ -90,7 +139,7 @@ const BankDashboard = () => {
                 <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.8, marginBottom: '0.5rem', color: 'var(--secondary)' }}>Institutional Credit Control</div>
-                        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0 }}>{t('bank.dashboard')}, {user?.email?.split('@')[0]?.toUpperCase() || 'Bank Officer'}</h1>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0 }}>{t('bank.dashboard')}, {bankName}</h1>
                         <p style={{ margin: '0.5rem 0 0 0', opacity: 0.8 }}>Overseeing ₹{(totalActiveLoanValue / 100000).toFixed(1)}L in agricultural assets across {approvedLoans.length} active portfolios.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem', borderRadius: '12px', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>

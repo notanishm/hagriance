@@ -2,9 +2,12 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
+const PROFILE_CACHE_KEY = 'agriance_cached_profile';
+
 /**
  * Protected Route Component
  * Requires authentication and optionally a specific role
+ * Falls back to localStorage cached profile for demo
  */
 export const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { user, userProfile, loading } = useAuth();
@@ -45,8 +48,17 @@ export const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Try to get profile: from context first, then localStorage fallback
+  let effectiveProfile = userProfile;
+  if (!effectiveProfile) {
+    try {
+      const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (cached) effectiveProfile = JSON.parse(cached);
+    } catch (e) { /* ignore */ }
+  }
+
   // Check role if required
-  if (requiredRole && userProfile?.role !== requiredRole) {
+  if (requiredRole && effectiveProfile?.role !== requiredRole) {
     // Redirect to appropriate dashboard based on user's role
     const rolePaths = {
       farmer: '/farmer/dashboard',
@@ -54,7 +66,7 @@ export const ProtectedRoute = ({ children, requiredRole = null }) => {
       bank: '/bank/dashboard',
     };
 
-    const redirectPath = rolePaths[userProfile?.role] || '/roles';
+    const redirectPath = rolePaths[effectiveProfile?.role] || '/roles';
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -97,15 +109,24 @@ export const PublicRoute = ({ children }) => {
     );
   }
 
+  // Try to get profile: from context first, then localStorage fallback
+  let effectiveProfile = userProfile;
+  if (!effectiveProfile) {
+    try {
+      const cached = localStorage.getItem(PROFILE_CACHE_KEY);
+      if (cached) effectiveProfile = JSON.parse(cached);
+    } catch (e) { /* ignore */ }
+  }
+
   // Redirect authenticated users to their dashboard
-  if (user && userProfile) {
+  if (user && effectiveProfile) {
     const rolePaths = {
       farmer: '/farmer/dashboard',
       business: '/business/dashboard',
       bank: '/bank/dashboard',
     };
 
-    const redirectPath = rolePaths[userProfile.role] || '/roles';
+    const redirectPath = rolePaths[effectiveProfile.role] || '/roles';
     return <Navigate to={redirectPath} replace />;
   }
 
