@@ -102,152 +102,143 @@ const FarmerDashboard = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-main)' }}>
-            <main style={{ padding: '3rem 4rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            {/* Dark Green Hero Banner */}
+            <header className="hero-banner">
+                <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h1 style={{ marginBottom: '0.25rem' }}>{t('dashboard.welcome')} {profile?.full_name || user?.email || 'Farmer'}</h1>
-                        <p style={{ color: 'var(--text-muted)' }}>{t('dashboard.subtitle')}</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <button
-                            className="btn btn-secondary"
-                            style={{ position: 'relative', padding: '0.75rem' }}
-                            onClick={() => setShowNotifications(!showNotifications)}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}
                         >
-                            <Bell size={20} />
-                            {notifications.filter(n => n.unread).length > 0 && (
-                                <span style={{
-                                    position: 'absolute', top: '-5px', right: '-5px',
-                                    background: 'var(--error)', color: 'white', fontSize: '10px',
-                                    padding: '2px 6px', borderRadius: '10px', fontWeight: 800
-                                }}>
-                                    {notifications.filter(n => n.unread).length}
-                                </span>
-                            )}
-                        </button>
-                        <button className="btn btn-primary" onClick={() => setShowLoanModal(true)}>
-                            <Wallet size={18} /> {t('loan.apply')}
-                        </button>
-                        {profile?.kyc_status === 'verified' && (
-                            <div style={{
-                                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                padding: '0.5rem 1rem', background: 'rgba(16, 185, 129, 0.1)',
-                                color: 'var(--success)', borderRadius: 'var(--radius-full)',
-                                fontSize: '0.85rem', fontWeight: 700
-                            }}>
-                                <ShieldCheck size={16} /> {t('dashboard.kyc_verified')}
+                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid rgba(255,255,255,0.2)' }}>👨‍🌾</div>
+                            <div>
+                                <h1 style={{ fontSize: '2.5rem', fontWeight: 700, margin: 0 }}>{t('dashboard.welcome')}, {profile?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Farmer'}</h1>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    {(profile?.crops_history || ['Wheat', 'Corn']).map(crop => (
+                                        <span key={crop} style={{ padding: '0.2rem 0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>{crop}</span>
+                                    ))}
+                                </div>
                             </div>
-                        )}
+                        </motion.div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        {/* Trust Score Circle */}
+                        <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--secondary)' }}>{profile?.trust_score || 850}</div>
+                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7 }}>Credit Trust Score</div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                                className="btn btn-secondary"
+                                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', position: 'relative', padding: '0.75rem' }}
+                                onClick={() => setShowNotifications(!showNotifications)}
+                            >
+                                <Bell size={20} />
+                                {notifications.filter(n => n.unread).length > 0 && (
+                                    <span style={{ position: 'absolute', top: '5px', right: '5px', width: '8px', height: '8px', background: 'var(--error)', borderRadius: '50%' }}></span>
+                                )}
+                            </button>
+                            <button className="gold-gradient-btn" onClick={() => setShowLoanModal(true)}>
+                                <Wallet size={18} /> {t('loan.apply')}
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </header>
 
+            <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 4rem 4rem 4rem' }}>
                 <AnimatePresence>
                     {showNotifications && (
                         <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
                             className="card"
-                            style={{
-                                position: 'absolute', top: '160px', right: '4rem',
-                                width: '350px', padding: '1.5rem', boxShadow: 'var(--shadow-lg)',
-                                border: '1px solid var(--border)', zIndex: 100
-                            }}
+                            style={{ position: 'absolute', top: '100px', right: '4rem', width: '350px', padding: '1.5rem', zIndex: 100 }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                                 <h3 style={{ fontSize: '1rem', margin: 0 }}>{t('common.notifications')}</h3>
-                                <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
+                                <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>&times;</button>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {notifications.length === 0 ? (
-                                    <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem' }}>{t('common.no_notifications')}</p>
-                                ) : (
-                                    notifications.map(n => (
-                                        <div key={n.id} style={{ paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{n.title}</span>
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{n.time}</span>
-                                            </div>
-                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>{n.message}</p>
-                                        </div>
-                                    ))
-                                )}
+                                {notifications.map(n => (
+                                    <div key={n.id} style={{ paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-light)' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{n.title}</div>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0' }}>{n.message}</p>
+                                    </div>
+                                ))}
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
+                {/* Stat Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
                     {stats.map((stat, i) => (
                         <motion.div
                             key={i}
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="card"
-                            style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem' }}
+                            className="stat-card"
+                            style={{ borderLeftColor: i === 0 ? 'var(--primary)' : i === 1 ? 'var(--warning)' : i === 2 ? 'var(--success)' : 'var(--primary-light)' }}
                         >
                             <div style={{ padding: '0.75rem', background: 'var(--bg-hover)', borderRadius: '12px' }}>{stat.icon}</div>
                             <div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{stat.label}</div>
-                                <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{stat.value}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>{stat.label}</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{stat.value}</div>
                             </div>
                         </motion.div>
                     ))}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+                <div className="dashboard-grid">
                     <section>
-                        <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FileCheck size={24} color="var(--primary)" /> {t('dashboard.contracts_title')}
-                        </h2>
+                        <div className="section-header-refined">
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{t('dashboard.contracts_title')}</h2>
+                        </div>
+
                         {contracts.length === 0 ? (
-                            <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
-                                <FileCheck size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                                <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('dashboard.no_contracts')}</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                    {t('dashboard.no_contracts_desc')}
-                                </p>
+                            <div className="card" style={{ padding: '4rem', textAlign: 'center' }}>
+                                <FileCheck size={64} color="var(--border)" style={{ marginBottom: '1.5rem' }} />
+                                <h3 style={{ marginBottom: '0.5rem' }}>{t('dashboard.no_contracts')}</h3>
+                                <p style={{ color: 'var(--text-muted)' }}>{t('dashboard.no_contracts_desc')}</p>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {contracts.map(contract => {
                                     const progress = contract.progress || (contract.status === 'completed' ? 100 : 50);
+                                    const statusClass = `status-${contract.status.toLowerCase()}`;
 
                                     return (
-                                        <div key={contract.id} className="card" style={{ padding: '2rem' }}>
+                                        <motion.div key={contract.id} whileHover={{ y: -5 }} className="card" style={{ padding: '2rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                                 <div>
-                                                    <h3 style={{ fontSize: '1.25rem', margin: 0 }}>{contract.business_name || 'Business Contract'}</h3>
-                                                    <p style={{ color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
-                                                        {contract.crop_name} • {contract.quantity} {contract.unit || 'Quintals'}
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.5rem' }}>#{contract.id?.slice(0, 8) || 'D4A017'}</div>
+                                                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{contract.business_name || 'Business Contract'}</h3>
+                                                    <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0', fontWeight: 500 }}>
+                                                        {contract.crop_name} • {contract.quantity} {contract.unit || 'Quintals'} @ ₹{contract.price}/q
                                                     </p>
                                                 </div>
                                                 <div style={{ textAlign: 'right' }}>
-                                                    <span style={{
-                                                        padding: '0.4rem 1rem',
-                                                        borderRadius: 'var(--radius-full)',
-                                                        background: contract.status === 'active' || contract.status === 'in_progress' ? 'rgba(16, 185, 129, 0.1)' :
-                                                            contract.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(0,0,0,0.05)',
-                                                        color: contract.status === 'active' || contract.status === 'in_progress' ? 'var(--success)' :
-                                                            contract.status === 'pending' ? 'var(--warning)' : 'var(--text-muted)',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 700
-                                                    }}>
+                                                    <span className={`status-badge ${statusClass}`}>
                                                         {contract.status === 'active' || contract.status === 'in_progress' ? t('dashboard.in_progress') :
-                                                            contract.status === 'pending' ? t('dashboard.pending_offer') : contract.status.toUpperCase()}
+                                                            contract.status === 'pending' ? t('dashboard.pending_offer') : contract.status}
                                                     </span>
-                                                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                        Value: ₹{contract.total_value?.toLocaleString() || '0'}
+                                                    <div style={{ marginTop: '1rem', fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
+                                                        ₹{(contract.total_value / 100000).toFixed(2)} Lakh
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {contract.status === 'pending' ? (
-                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                                                     <button
                                                         className="btn btn-secondary"
-                                                        style={{ flex: 1, color: 'var(--error)' }}
+                                                        style={{ flex: 1, color: 'var(--error)', border: '1px solid var(--border)' }}
                                                         onClick={() => handleContractAction(contract.id, 'reject')}
                                                     >
                                                         {t('dashboard.decline')}
@@ -261,21 +252,36 @@ const FarmerDashboard = () => {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <>
-                                                    <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                                                        <span>{t('dashboard.growth_progress')}</span>
-                                                        <span style={{ fontWeight: 600 }}>{progress}%</span>
+                                                <div style={{ background: 'var(--bg-hover)', padding: '1.5rem', borderRadius: '16px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                                        <div style={{ display: 'flex', gap: '2rem' }}>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Sowing</div>
+                                                                <CheckCircle size={16} color="var(--success)" style={{ marginTop: '0.25rem' }} />
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Flowering</div>
+                                                                <CheckCircle size={16} color="var(--success)" style={{ marginTop: '0.25rem' }} />
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Harvest</div>
+                                                                <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--border)', marginTop: '0.25rem' }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{progress}% Complete</div>
+                                                        </div>
                                                     </div>
-                                                    <div style={{ height: '8px', background: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                    <div style={{ height: '8px', background: 'white', borderRadius: '4px', overflow: 'hidden' }}>
                                                         <motion.div
                                                             initial={{ width: 0 }}
                                                             animate={{ width: `${progress}%` }}
                                                             style={{ height: '100%', background: 'var(--primary)' }}
                                                         />
                                                     </div>
-                                                </>
+                                                </div>
                                             )}
-                                        </div>
+                                        </motion.div>
                                     );
                                 })}
                             </div>
@@ -283,61 +289,55 @@ const FarmerDashboard = () => {
                     </section>
 
                     <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        <section>
-                            <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                {t('dashboard.market_insights')}
-                            </h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {mockMarketInsights.map((insight, i) => (
-                                    <div key={i} className="card" style={{
-                                        background: insight.trend === 'up' ? 'var(--primary)' : insight.trend === 'alert' ? 'var(--error)' : 'white',
-                                        color: insight.trend === 'up' || insight.trend === 'alert' ? 'white' : 'var(--text-main)',
-                                        padding: '1.5rem'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                            {insight.trend === 'up' ? <TrendingUp size={20} /> : insight.trend === 'alert' ? <AlertCircle size={20} /> : <Bell size={20} />}
-                                            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{insight.title}</h3>
-                                        </div>
-                                        <p style={{ fontSize: '0.85rem', opacity: 0.9, margin: 0 }}>
-                                            {insight.desc}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                        <div className="section-header-refined">
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{t('dashboard.market_insights')}</h2>
+                        </div>
 
-                        <section>
-                            <div className="card" style={{ padding: '1.5rem', border: '1px solid rgba(45, 90, 39, 0.1)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 700 }}>
-                                        <Microscope size={18} /> {t('quality.title')}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            {mockMarketInsights.map((insight, i) => (
+                                <div key={i} className="card" style={{
+                                    padding: '1.5rem',
+                                    background: insight.trend === 'up' ? 'linear-gradient(135deg, #2d5a27 0%, #1a3c1a 100%)' : insight.trend === 'alert' ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'white',
+                                    color: insight.trend === 'up' || insight.trend === 'alert' ? 'white' : 'var(--text-main)',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                                        {insight.trend === 'up' ? <TrendingUp size={20} /> : insight.trend === 'alert' ? <AlertCircle size={20} /> : <TrendingUp size={20} stroke="var(--primary)" />}
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{insight.title}</h3>
                                     </div>
-                                    <ThermometerSun size={18} color="var(--secondary)" />
+                                    <p style={{ fontSize: '0.9rem', opacity: insight.trend === 'up' || insight.trend === 'alert' ? 0.9 : 0.7, margin: 0 }}>
+                                        {insight.desc}
+                                    </p>
                                 </div>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-                                    {t('quality.desc')}
-                                </p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                                    <div style={{ background: 'var(--bg-hover)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{t('quality.estimate')}</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>8.5 Quintals / Acre</div>
+                            ))}
+                        </div>
+
+                        <div className="card" style={{ padding: '2rem', border: '1px solid rgba(45, 90, 39, 0.1)', background: '#F8FBF8' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Microscope size={20} color="white" />
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('quality.moisture')}</div>
-                                            <div style={{ fontSize: '1rem', fontWeight: 600 }}>12.4%</div>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('quality.health')}</div>
-                                            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--success)' }}>{t('dashboard.optimal')}</div>
-                                        </div>
-                                    </div>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>{t('quality.title')}</h3>
                                 </div>
-                                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '0.85rem' }}>
-                                    {t('quality.viewReport')}
-                                </button>
+                                <div style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', boxShadow: 'var(--shadow-sm)' }}>
+                                    <ThermometerSun size={20} color="var(--warning)" />
+                                </div>
                             </div>
-                        </section>
+
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{t('quality.desc')}</p>
+
+                            <div style={{ background: 'white', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid var(--border-light)' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Yield Estimate</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>8.5 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Quintals / Acre</span></div>
+                                <div style={{ height: '4px', background: 'var(--border-light)', borderRadius: '2px', marginTop: '1rem', overflow: 'hidden' }}>
+                                    <div style={{ width: '85%', height: '100%', background: 'var(--success)' }}></div>
+                                </div>
+                            </div>
+
+                            <button className="btn btn-secondary" style={{ width: '100%', padding: '1rem' }}>
+                                {t('quality.viewReport')} <ArrowRight size={16} />
+                            </button>
+                        </div>
                     </aside>
                 </div>
             </main>

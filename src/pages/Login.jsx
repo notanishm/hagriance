@@ -66,60 +66,103 @@ const Login = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)', padding: '2rem' }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="card" style={{ maxWidth: '450px', width: '100%', padding: '3rem', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ width: '64px', height: '64px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'white' }}>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f8faf8 0%, #ffffff 100%)',
+      padding: '2rem'
+    }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="card"
+        style={{
+          maxWidth: '480px',
+          width: '100%',
+          padding: '4rem 3.5rem',
+          background: 'white',
+          border: '1px solid var(--border)',
+          boxShadow: '0 40px 100px -20px rgba(0,0,0,0.08)'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <div style={{
+            width: '72px',
+            height: '72px',
+            background: 'var(--primary)',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.5rem',
+            color: 'white',
+            boxShadow: '0 12px 24px rgba(45, 90, 39, 0.2)'
+          }}>
             <LogIn size={32} />
           </div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: 'var(--text-main)' }}>{t('auth.login_title')}</h1>
-          <p style={{ color: 'var(--text-muted)' }}>{t('auth.login_subtitle')}</p>
+          <h1 style={{ fontSize: '2.25rem', fontWeight: 900, marginBottom: '0.5rem', color: 'var(--primary)', letterSpacing: '-1px' }}>{t('auth.login_title')}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>{t('auth.login_subtitle')}</p>
         </div>
 
         {error && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#EF4444' }}>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '1.25rem', background: '#FEF2F2', border: '1px solid #FEE2E2', borderRadius: '12px', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#B91C1C' }}>
             <AlertCircle size={20} />
-            <span style={{ fontSize: '0.9rem' }}>{error}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{error}</span>
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>{t('auth.email')}</label>
+          <div style={{ marginBottom: '1.75rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '800', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>{t('auth.email')}</label>
             <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '1rem' }} />
+              <Mail size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@agriance.com"
+                required
+                className="form-input-refined"
+                style={{ paddingLeft: '3.25rem' }}
+              />
             </div>
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>{t('auth.password')}</label>
+          <div style={{ marginBottom: '1.75rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '800', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>{t('auth.password')}</label>
             <div style={{ position: 'relative' }}>
-              <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '1rem' }} />
+              <Lock size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="form-input-refined"
+                style={{ paddingLeft: '3.25rem' }}
+              />
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="checkbox" style={{ accentColor: 'var(--primary)' }} />
-              <span style={{ fontSize: '0.9rem' }}>{t('auth.remember_me')}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+              <input type="checkbox" style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', borderRadius: '4px' }} />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>{t('auth.remember_me')}</span>
             </label>
-            <Link to="/forgot-password" style={{ fontSize: '0.9rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>{t('auth.forgot_password')}</Link>
+            <Link to="/forgot-password" style={{ fontSize: '0.9rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 800 }}>{t('auth.forgot_password')}</Link>
           </div>
 
-          <button type="submit" disabled={isLoading} className="btn btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', marginBottom: '1rem' }}>
+          <button type="submit" disabled={isLoading} className="btn btn-primary" style={{ width: '100%', height: '56px', fontSize: '1.1rem', fontWeight: 800, borderRadius: '14px', marginBottom: '1.5rem', boxShadow: '0 8px 20px rgba(45, 90, 39, 0.15)' }}>
             {isLoading ? t('auth.signing_in') : t('auth.sign_in')}
           </button>
 
           {/* Quick Demo Login Section */}
-          <div style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }}></div>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Shield size={14} /> Quick Demo Access
-              </span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }}></div>
+          <div style={{ marginTop: '3rem', padding: '1.5rem', background: '#F8FAFC', borderRadius: '16px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <Shield size={14} /> Quick Demo Access
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
               {[
@@ -133,38 +176,37 @@ const Login = () => {
                   onClick={() => handleQuickLogin(role.email)}
                   disabled={isLoading}
                   style={{
-                    padding: '0.75rem 0.5rem',
+                    padding: '0.75rem 0.25rem',
                     background: 'white',
                     border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
+                    borderRadius: '10px',
                     fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: role.color,
+                    fontWeight: 800,
+                    color: 'var(--primary)',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     boxShadow: 'var(--shadow-sm)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = role.color;
-                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.borderColor = role.color;
+                    e.currentTarget.style.color = role.color;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white';
-                    e.currentTarget.style.color = role.color;
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.color = 'var(--primary)';
+                    e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
                   {role.label}
                 </button>
               ))}
             </div>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: '1rem' }}>
-              Password: <strong>test1test1</strong>
-            </p>
           </div>
 
-          <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '2rem' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '1rem', marginTop: '2.5rem' }}>
             {t('auth.no_account')}{' '}
-            <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '700' }}>{t('auth.signup')}</Link>
+            <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '800' }}>{t('auth.signup')}</Link>
           </div>
         </form>
       </motion.div>

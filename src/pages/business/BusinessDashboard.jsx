@@ -76,9 +76,29 @@ const BusinessDashboard = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-main)' }}>
-            {/* Tab Navigation */}
-            <div style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '0 4rem' }}>
-                <div style={{ display: 'flex', gap: '2rem' }}>
+            {/* Header / Hero Area */}
+            <header className="hero-banner" style={{ padding: '3rem 4rem 5rem 4rem', borderRadius: 0, marginBottom: 0 }}>
+                <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.8, marginBottom: '0.5rem', color: 'var(--secondary)' }}>Procurement Management</div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0 }}>{t('common.welcome')}, {profile?.business_name || 'AgriCorp'}</h1>
+                        <p style={{ margin: '0.5rem 0 0 0', opacity: 0.8 }}>Managing {activeContractsCount} active supply chains across {farmers.length} verified farmers.</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'right', paddingRight: '1.5rem', borderRight: '1px solid rgba(255,255,255,0.2)' }}>
+                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7 }}>Portfolio Value</div>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>₹{(totalContractValue / 100000).toFixed(1)}L</div>
+                        </div>
+                        <button className="gold-gradient-btn" onClick={() => setShowModal(true)}>
+                            <Plus size={18} /> {t('marketplace.post_requirement')}
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* Sticky Navigation */}
+            <nav style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '0 4rem', position: 'sticky', top: 0, zIndex: 10 }}>
+                <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', gap: '3rem' }}>
                     {[
                         { id: 'marketplace', icon: <Briefcase size={18} />, label: t('dashboard.marketplace') },
                         { id: 'contracts', icon: <FileText size={18} />, label: t('dashboard.my_contracts') },
@@ -89,7 +109,7 @@ const BusinessDashboard = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             style={{
-                                padding: '1.5rem 0.5rem',
+                                padding: '1.25rem 0',
                                 border: 'none',
                                 background: 'none',
                                 color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
@@ -98,96 +118,90 @@ const BusinessDashboard = () => {
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem'
+                                gap: '0.6rem',
+                                transition: 'all 0.2s ease'
                             }}
                         >
                             {tab.icon} {tab.label}
                         </button>
                     ))}
                 </div>
-            </div>
+            </nav>
 
-            <main style={{ padding: '3rem 4rem' }}>
+            <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '3rem 4rem' }}>
                 {activeTab === 'marketplace' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
-                            <div>
-                                <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{t('marketplace.title')}</h1>
-                                <p style={{ color: 'var(--text-muted)' }}>{t('marketplace.subtitle')}</p>
-                            </div>
-                            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ padding: '1rem 2rem', borderRadius: 'var(--radius-md)' }}>
-                                <Plus size={20} /> {t('marketplace.post_requirement')}
-                            </button>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '3rem' }}>
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '3rem' }}>
                             <aside>
-                                <div className="card" style={{ padding: '1.5rem' }}>
-                                    <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Filter size={18} /> {t('marketplace.filters')}
+                                <div className="card" style={{ padding: '2rem', sticky: 'top 100px' }}>
+                                    <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
+                                        <Filter size={18} color="var(--primary)" /> Smart Filters
                                     </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>{t('marketplace.crop_category')}</label>
-                                            <select style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                                            <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Crop Category</label>
+                                            <select className="form-input-refined" style={{ padding: '0.6rem' }}>
                                                 <option>{t('marketplace.all_categories')}</option>
                                                 {cropCategories.map(cat => <option key={cat.name} value={cat.name}>{cat.name}</option>)}
                                             </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Min. Trust Score</label>
+                                            <input type="range" style={{ width: '100%', accentColor: 'var(--primary)' }} />
                                         </div>
                                     </div>
                                 </div>
                             </aside>
 
                             <section>
-                                <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+                                <div style={{ marginBottom: '2.5rem', display: 'flex', gap: '1rem' }}>
                                     <div style={{ position: 'relative', flex: 1 }}>
-                                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
+                                        <Search style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
                                         <input
                                             type="text"
+                                            className="form-input-refined"
                                             placeholder={t('marketplace.search_placeholder')}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '1rem 1rem 1rem 3rem',
-                                                borderRadius: 'var(--radius-md)',
-                                                border: '1px solid var(--border)',
-                                                boxShadow: 'var(--shadow-sm)'
-                                            }}
+                                            style={{ paddingLeft: '3.5rem', height: '56px', fontSize: '1rem', background: 'white' }}
                                         />
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     {farmers.length === 0 ? (
-                                        <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
-                                            <User size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
-                                            <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-muted)' }}>{t('marketplace.no_farmers')}</h3>
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t('marketplace.no_farmers_desc')}</p>
+                                        <div className="card" style={{ padding: '5rem', textAlign: 'center' }}>
+                                            <User size={64} color="var(--border)" style={{ marginBottom: '1.5rem' }} />
+                                            <h3 style={{ color: 'var(--text-muted)' }}>{t('marketplace.no_farmers')}</h3>
                                         </div>
                                     ) : (
                                         farmers.map(farmer => (
-                                            <motion.div key={farmer.id} whileHover={{ x: 5 }} className="card" style={{ display: 'flex', alignItems: 'center', gap: '2rem', padding: '1.5rem' }}>
-                                                <div style={{ fontSize: '3rem' }}>👨‍🌾</div>
+                                            <motion.div key={farmer.id} whileHover={{ x: 5, boxShadow: 'var(--shadow-md)' }} className="card" style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', padding: '2rem' }}>
+                                                <div style={{ width: '80px', height: '80px', borderRadius: '20px', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', border: '1px solid var(--border-light)' }}>
+                                                    {farmer.full_name?.charAt(0) || '👨‍🌾'}
+                                                </div>
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
-                                                        <h3 style={{ fontSize: '1.25rem' }}>{farmer.full_name}</h3>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#B8860B', fontSize: '0.9rem', fontWeight: 700 }}>
-                                                            <Star size={16} fill="#B8860B" /> {farmer.rating || '4.5'}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                                        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>{farmer.full_name}</h3>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(212, 175, 55, 0.1)', color: '#B8860B', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 800 }}>
+                                                            <Star size={14} fill="#B8860B" /> {farmer.rating || '4.8'}
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(45, 90, 39, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 800 }}>
+                                                            <ShieldCheck size={14} /> Aadhaar Verified
                                                         </div>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={14} /> {farmer.location}</span>
-                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>🌾 {farmer.land_size} Acres</span>
+                                                    <div style={{ display: 'flex', gap: '2rem', color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 500 }}>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><MapPin size={16} color="var(--primary)" /> {farmer.location}</span>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Briefcase size={16} color="var(--primary)" /> {farmer.land_size} Acres</span>
                                                     </div>
-                                                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                                                        {(farmer.crops_history || []).map((crop, idx) => (
-                                                            <span key={idx} style={{ padding: '0.25rem 0.75rem', background: 'rgba(45, 90, 39, 0.05)', borderRadius: 'var(--radius-full)', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>{crop}</span>
+                                                    <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.6rem' }}>
+                                                        {(farmer.crops_history || ['Wheat', 'Corn']).map((crop, idx) => (
+                                                            <span key={idx} style={{ padding: '0.4rem 1rem', background: '#F8FAF8', border: '1px solid rgba(45, 90, 39, 0.1)', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase' }}>{crop}</span>
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <button className="btn btn-primary" onClick={() => { setSelectedFarmer(farmer); setShowContract(true); }}>
-                                                    {t('marketplace.establish_contract')} <ArrowRight size={18} />
+                                                <button className="gold-gradient-btn" onClick={() => { setSelectedFarmer(farmer); setShowContract(true); }} style={{ height: 'fit-content', padding: '1rem 2rem' }}>
+                                                    Establish Contract <ArrowRight size={18} />
                                                 </button>
                                             </motion.div>
                                         ))
@@ -199,61 +213,54 @@ const BusinessDashboard = () => {
                 )}
 
                 {activeTab === 'contracts' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <div style={{ marginBottom: '3rem' }}>
-                            <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{t('contracts.title')}</h1>
-                            <p style={{ color: 'var(--text-muted)' }}>{t('contracts.subtitle')}</p>
+                    <motion.div initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }}>
+                        <div className="section-header-refined">
+                            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>Active Procurement Contracts</h2>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                             {contracts.length === 0 ? (
-                                <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
-                                    <FileText size={48} color="var(--text-muted)" style={{ marginBottom: '1rem' }} />
+                                <div className="card" style={{ gridColumn: 'span 2', padding: '5rem', textAlign: 'center' }}>
+                                    <FileText size={64} color="var(--border)" style={{ marginBottom: '1.5rem' }} />
                                     <h3>{t('contracts.no_contracts')}</h3>
-                                    <p style={{ color: 'var(--text-muted)' }}>{t('contracts.no_contracts_desc')}</p>
                                 </div>
                             ) : (
                                 contracts.map(contract => (
-                                    <div key={contract.id} className="card" style={{ padding: '2rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                            <div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <h3 style={{ fontSize: '1.25rem' }}>{contract.farmer_name || 'Farmer Contract'}</h3>
-                                                    <span style={{
-                                                        padding: '0.25rem 0.75rem',
-                                                        background: 'rgba(45, 90, 39, 0.1)',
-                                                        color: 'var(--primary)',
-                                                        borderRadius: 'var(--radius-full)',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 700
-                                                    }}>
-                                                        {contract.crop_name}
-                                                    </span>
+                                    <motion.div key={contract.id} whileHover={{ y: -5 }} className="card" style={{ padding: '2rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                                            <div style={{ display: 'flex', gap: '1.25rem' }}>
+                                                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>🌾</div>
+                                                <div>
+                                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{contract.farmer_name || 'Farmer Contract'}</h3>
+                                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0' }}>{contract.crop_name} • {contract.contract_number}</p>
                                                 </div>
-                                                <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>ID: {contract.contract_number || contract.id} • {new Date(contract.created_at).toLocaleDateString()}</p>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
-                                                <span style={{
-                                                    padding: '0.4rem 1rem',
-                                                    borderRadius: 'var(--radius-full)',
-                                                    background: contract.status === 'active' || contract.status === 'in_progress' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                                    color: contract.status === 'active' || contract.status === 'in_progress' ? 'var(--success)' : 'var(--warning)',
-                                                    fontSize: '0.8rem', fontWeight: 700
-                                                }}>
-                                                    {contract.status === 'active' || contract.status === 'in_progress' ? t('dashboard.in_progress') : contract.status.toUpperCase()}
+                                                <span className={`status-badge status-${contract.status.toLowerCase()}`}>
+                                                    {contract.status === 'active' || contract.status === 'in_progress' ? 'Healthy' : contract.status}
                                                 </span>
-                                                <div style={{ marginTop: '0.5rem', fontSize: '1.1rem', fontWeight: 700 }}>₹{contract.total_value?.toLocaleString()}</div>
+                                                <div style={{ marginTop: '0.75rem', fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>₹{(contract.total_value / 100000).toFixed(2)}L</div>
                                             </div>
                                         </div>
 
-                                        <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                                            <span>{t('contracts.fulfillment')}</span>
-                                            <span style={{ fontWeight: 600 }}>{contract.progress || (contract.status === 'completed' ? 100 : 45)}%</span>
+                                        <div style={{ background: '#F8FAFC', padding: '1.5rem', borderRadius: '16px' }}>
+                                            <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                                <span>Fulfillment Progress</span>
+                                                <span style={{ color: 'var(--primary)' }}>{contract.progress || 45}%</span>
+                                            </div>
+                                            <div style={{ height: '8px', background: 'white', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                                                <motion.div initial={{ width: 0 }} animate={{ width: `${contract.progress || 45}%` }} style={{ height: '100%', background: 'var(--primary)' }} />
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+                                                <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <ShieldCheck size={16} /> View Trust Audit
+                                                </button>
+                                                <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                                                    Live Cam Tracking
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div style={{ height: '8px', background: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <motion.div initial={{ width: 0 }} animate={{ width: `${contract.progress || (contract.status === 'completed' ? 100 : 45)}%` }} style={{ height: '100%', background: 'var(--primary)' }} />
-                                        </div>
-                                    </div>
+                                    </motion.div>
                                 ))
                             )}
                         </div>
