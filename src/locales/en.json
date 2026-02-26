@@ -1,0 +1,64 @@
+{
+  "landing": {
+    "title": "Agriance",
+    "subtitle": "Empowering Farmers, Enabling Businesses",
+    "choose_language": "Choose Your Language",
+    "welcome": "Welcome back"
+  },
+  "roles": {
+    "title": "How would you like to join?",
+    "farmer": "I am a Farmer",
+    "farmer_desc": "Get guaranteed payments upfront, zero loan burden, and fair contracts.",
+    "business": "I am a Business",
+    "business_desc": "Source quality crops directly, secure supply, and transparent deals.",
+    "cta": "Get Started",
+    "bank": "Partner Bank / NBFC",
+    "bank_desc": "Evaluate and approve agricultural loans using verified platform data"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit",
+    "login": "Login",
+    "register": "Register"
+  },
+  "bank": {
+    "dashboard": "Banker's Terminal",
+    "loanApplications": "Loan Applications",
+    "riskScore": "Risk Score",
+    "approve": "Approve Loan",
+    "reject": "Reject"
+  },
+  "loan": {
+    "apply": "Apply for Loan",
+    "amount": "Loan Amount",
+    "purpose": "Loan Purpose",
+    "tenure": "Tenure",
+    "status": "Loan Status"
+  },
+  "contract": {
+    "generating": "Generating your contract...",
+    "preview": "Contract Preview",
+    "edit": "Edit Requirements",
+    "regenerate": "Regenerate Contract",
+    "terms": "Contract Terms",
+    "sign": "E-Sign Agreement"
+  },
+  "quality": {
+    "title": "Quality Control & Monitoring",
+    "desc": "Real-time crop health and quality parameter tracking for all active contracts.",
+    "activeBatches": "Active Batches",
+    "batchId": "Batch ID",
+    "crop": "Crop",
+    "status": "Status",
+    "params": "Parameters",
+    "moisture": "Moisture",
+    "purity": "Purity",
+    "health": "Health",
+    "certified": "Certified",
+    "monitored": "Monitoring",
+    "viewReport": "View Full Report",
+    "lastUpdate": "Last Updated",
+    "estimate": "Yield Estimate"
+  }
+}

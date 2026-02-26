@@ -1,0 +1,3 @@
+# Contract Engine Requirements
+flask>=2.0.0
+fpdf2>=2.5.0
